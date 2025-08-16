@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Naming Conventions - React Project Guidelines</title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Naming Conventions</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה זה חשוב?</h2>
+        <p>קונבנציה אחידה מונעת בלגן ומקצרת זמן חיפוש.</p>
+        <ul>
+          <li><strong>קריאות</strong>: שמות משקפים במדויק את התוכן.</li>
+          <li><strong>אחידות</strong>: כולם עובדים לפי אותו סגנון.</li>
+          <li><strong>ייבוא נקי</strong>: משתלב מצוין עם Barrel Exports.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>קונבנציות מקובלות ב־React</h2>
+        <ul>
+          <li>
+            <strong>קומפוננטות</strong>: PascalCase — למשל
+            <code>UserCard.tsx</code>, <code>UserList.tsx</code>.
+          </li>
+          <li>
+            <strong>Hooks</strong>: תמיד prefix של <code>use</code> וב־camelCase
+            — למשל <code>useUsers.ts</code>, <code>useAuth.ts</code>.
+          </li>
+          <li>
+            <strong>Services</strong>: camelCase או PascalCase — למשל
+            <code>userService.ts</code>, <code>AuthService.ts</code>.
+          </li>
+          <li>
+            <strong>CSS / Styles</strong>: kebab-case או בהתאמה לשם הקומפוננטה —
+            למשל <code>user-card.css</code>, <code>dashboard.css</code>.
+          </li>
+          <li>
+            <strong>Constants</strong>: UPPER_SNAKE_CASE — למשל
+            <code>API_URL.ts</code>, <code>MAX_RETRIES.ts</code>.
+          </li>
+          <li>
+            <strong>Test files</strong>: שם הקובץ + סיומת <code>.test</code> —
+            למשל <code>UserCard.test.tsx</code>.
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>טיפים פרקטיים</h2>
+        <ul>
+          <li><strong>קומפוננטות</strong>: תמיד PascalCase.</li>
+          <li><strong>Hooks</strong>: תמיד להתחיל ב־<code>use</code>.</li>
+          <li>
+            <strong>שם תואם לתוכן</strong>: קבצים/תיקיות משקפים את מה שבפנים.
+          </li>
+          <li><strong>אחידות מעל הכל</strong>: בחרו סגנון אחד והיצמדו אליו.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          שמירה על Naming Conventions ברורים ועקביים משפרת קריאות, תחזוקה ושיתוף
+          קוד. בשילוב עם Feature-Based Structure ו־Barrel Exports, הקוד נשאר
+          נקי, מודולרי וקל להבנה.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Theming – שינוי ערכות צבע בקלות - React Project Guidelines</title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Theming – שינוי ערכות צבע בקלות</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה Theming חשוב?</h2>
+        <p>
+          שמירה על עקביות עיצובית תוך אפשרות להתאמה אישית היא קריטית בפיתוח
+          אפליקציות React. Theming מאפשר להגדיר ערכות צבע, טיפוגרפיה ורכיבי UI
+          באופן מרכזי ולשנותם בקלות בכל האפליקציה.
+        </p>
+        <ul>
+          <li>מאפשר התאמה למיתוג החברה או ל־brand guidelines.</li>
+          <li>תומך במצבי Light / Dark mode או ערכות מותאמות למשתמש.</li>
+          <li>
+            חוסך זמן פיתוח על ידי ניהול סטיילינג מרכזי במקום שינוי ידני בכל
+            קומפוננטה.
+          </li>
+          <li>משפר עקביות עיצובית ומונע טעויות חזותיות.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>איך מיישמים Theming</h2>
+        <h3>שימוש ב־CSS Variables</h3>
+        <p>הגדרת משתני צבע בקובץ CSS גלובלי:</p>
+        <pre dir="ltr"><code>:root {
+  --primary-color: #4a90e2;
+  --secondary-color: #f5a623;
+  --background-color: #ffffff;
+  --text-color: #333333;
+}
+
+[data-theme="dark"] {
+  --primary-color: #5aa3f0;
+  --secondary-color: #ffb84d;
+  --background-color: #1a1a1a;
+  --text-color: #ffffff;
+}</code></pre>
+        <p>שימוש במשתנים בקומפוננטות:</p>
+        <pre dir="ltr"><code>.button {
+  background-color: var(--primary-color);
+  color: var(--text-color);
+  border: 1px solid var(--secondary-color);
+}</code></pre>
+
+        <h3>שימוש ב־Theme Providers</h3>
+        <p>ספריות כמו Styled Components או Emotion מאפשרות ThemeProvider:</p>
+        <pre dir="ltr"><code>import { ThemeProvider } from 'styled-components';
+
+const lightTheme = {
+  primary: '#4a90e2',
+  secondary: '#f5a623',
+  background: '#ffffff',
+  text: '#333333'
+};
+
+const darkTheme = {
+  primary: '#5aa3f0',
+  secondary: '#ffb84d',
+  background: '#1a1a1a',
+  text: '#ffffff'
+};
+
+&lt;ThemeProvider theme={isDark ? darkTheme : lightTheme}&gt;
+  &lt;App /&gt;
+&lt;/ThemeProvider&gt;</code></pre>
+
+        <h3>Tailwind + Config</h3>
+        <ul>
+          <li>
+            Tailwind מאפשר הגדרת צבעים ב־tailwind.config.js ושימוש ב־classNames
+            מותאמים.
+          </li>
+          <li>תמיכה ב־dark mode דרך class או media query.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>טיפים למימוש יעיל</h2>
+        <ul>
+          <li>
+            לשמור על ערכות צבע מרכזיות ולא ליצור צבעים hard-coded בקומפוננטות.
+          </li>
+          <li>
+            לתכנן מראש את ערכת הצבעים לכל מצב (light, dark, high contrast).
+          </li>
+          <li>לשלב עם Context או state לניהול מצב שינויים דינמי בזמן ריצה.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          Theming מאפשר ניהול צבעים וגופנים בצורה מרכזית, גמישה ואחידה. הטמעה
+          נכונה מבטיחה עקביות UI, תמיכה במצבי משתמש שונים, וחיסכון משמעותי בזמן
+          פיתוח ותחזוקה.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Code Review Checklist – מה לחפש - React Project Guidelines</title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Code Review Checklist – מה לחפש</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה Code Review חשוב?</h2>
+        <p>
+          בפיתוח React ובכל פרויקט תוכנה, Code Review הוא שלב קריטי להבטחת איכות
+          הקוד, קריאותו ותחזוקתו. שימוש ב־Checklist מסודר מסייע למבקר להתמקד
+          בנקודות החשובות ולמנוע טעויות חוזרות.
+        </p>
+        <ul>
+          <li>מבטיח עקביות וסגנון קוד אחיד בצוות.</li>
+          <li>מונע שגיאות לוגיקה ובאגים פוטנציאליים.</li>
+          <li>משפר קריאות ותחזוקה של הקוד לאורך זמן.</li>
+          <li>מאפשר למפתחים ללמוד ולהשתפר דרך משוב מסודר.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>מה לבדוק במהלך Code Review</h2>
+        <h3>קריאות וארגון קוד</h3>
+        <ul>
+          <li>שמות משתנים, פונקציות וקומפוננטות ברורים ומשמעותיים.</li>
+          <li>מבנה תיקיות לפי Feature-Based או מודולרי.</li>
+          <li>שימוש נכון ב־index.ts / Barrel Exports.</li>
+        </ul>
+
+        <h3>React Best Practices</h3>
+        <ul>
+          <li>
+            שימוש נכון ב־Hooks (useState, useEffect, useMemo, useCallback).
+          </li>
+          <li>מניעת רינדורים מיותרים ו־props drilling מיותר.</li>
+          <li>הפרדת לוגיקה מ־UI (Presentational vs Container Components).</li>
+        </ul>
+
+        <h3>State Management</h3>
+        <ul>
+          <li>שימוש נכון ב־Local State מול Global State.</li>
+          <li>בדיקה שה־Redux / Recoil / React Query מנוהלים נכון.</li>
+        </ul>
+
+        <h3>UI / Styling</h3>
+        <ul>
+          <li>
+            עקביות בסגנון באמצעות CSS Modules, Styled Components או Tailwind.
+          </li>
+          <li>שימוש במערכת Design System ו־Storybook במידת הצורך.</li>
+          <li>תמיכה ב־Responsive Design ו־Accessibility.</li>
+        </ul>
+
+        <h3>בדיקות ואיכות</h3>
+        <ul>
+          <li>בדיקות יחידה (Unit Tests) וכיסוי ל־edge cases.</li>
+          <li>טיפול נכון בשגיאות (Error Boundaries, API Retry Logic).</li>
+          <li>Logging ומוניטורינג (Sentry, LogRocket) במקום הנכון.</li>
+        </ul>
+
+        <h3>ביצועים</h3>
+        <ul>
+          <li>זיהוי רינדורים מיותרים והימנעות מהכבדות בקומפוננטות.</li>
+          <li>שימוש ב־Code Splitting, Lazy Loading ו־Memoization.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>טיפים למימוש יעיל</h2>
+        <ul>
+          <li>להשתמש ב־PR templates שמזכירים את הרשימה.</li>
+          <li>לתת משוב ברור וממוקד, לא רק "נראה טוב".</li>
+          <li>לשלב בדיקה אוטומטית (Linters, Prettier, ESLint).</li>
+          <li>לשים דגש על קריאות הקוד והתחזוקה, לא רק על פונקציונליות.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          Code Review Checklist הוא כלי קריטי לשמירה על איכות הקוד ותחזוקתו.
+          בדיקה מסודרת של קריאות, React best practices, ניהול state, UI, בדיקות
+          וביצועים מבטיחה אפליקציה יציבה, קריאה ומוכנה לצוותי פיתוח גדולים.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

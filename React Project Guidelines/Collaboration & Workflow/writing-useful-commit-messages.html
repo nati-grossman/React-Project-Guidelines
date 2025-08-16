@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Writing Useful Commit Messages - React Project Guidelines</title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Writing Useful Commit Messages</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה commit messages חשובים?</h2>
+        <p>
+          כתיבת הודעות commit ברורות ומדויקות היא חלק קריטי בתהליך הפיתוח. הודעה
+          טובה מאפשרת למפתחים להבין במהירות מה השתנה, למה זה שונה ומסייעת בעת
+          חקירת בעיות או שימוש ב־git history.
+        </p>
+        <ul>
+          <li>מאפשר להבין את ההיסטוריה של הקוד בצורה ברורה.</li>
+          <li>מקל על Code Review והבנת ההקשר של השינויים.</li>
+          <li>עוזר בעת debugging או rollback של שינויים.</li>
+          <li>משפר את שיתוף הפעולה בצוותים גדולים.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>עקרונות לכתיבת הודעות commit</h2>
+        <h3>1. היו תמציתיים וברורים</h3>
+        <p>שורה ראשונה קצרה (50 תווים או פחות) שמתארת את השינוי.</p>
+        <p>לדוגמה:</p>
+        <pre dir="ltr"><code>Add retry logic for API calls</code></pre>
+
+        <h3>2. פירוט במידת הצורך</h3>
+        <p>ניתן להוסיף גוף הודעה מפורט אחרי שורה ריקה, עד 72 תווים לשורה.</p>
+        <p>להסביר למה השינוי נדרש ואיך הוא פותר בעיה:</p>
+        <pre dir="ltr"><code>Add retry logic for API calls
+
+This ensures temporary network errors are retried automatically,
+improving user experience and reducing failed requests.</code></pre>
+
+        <h3>3. השתמש בפעלים בזמן הווה</h3>
+        <p>לדוגמה: "Fix bug in login form", לא "Fixed bug…"</p>
+
+        <h3>4. שמור על עקביות</h3>
+        <p>כדאי לאמץ סגנון אחיד בצוות, למשל Conventional Commits:</p>
+        <pre dir="ltr"><code>feat: add retry logic for API calls
+fix: correct validation in signup form
+chore: update dependencies
+docs: update README with installation steps</code></pre>
+
+        <h3>5. אל תכלול שינויים אוטומטיים או מיותרים</h3>
+        <p>commit צריך לתעד שינויים משמעותיים בלבד.</p>
+      </section>
+
+      <section class="category">
+        <h2>דוגמאות טובות ורעות</h2>
+        <h3>✅ דוגמאות טובות</h3>
+        <pre dir="ltr"><code>feat: add dark mode toggle to settings
+fix: prevent memory leak in useEffect cleanup
+refactor: extract user validation logic to custom hook
+perf: optimize rendering with React.memo</code></pre>
+
+        <h3>❌ דוגמאות רעות</h3>
+        <pre dir="ltr"><code>fix stuff
+WIP
+updated files
+asdf
+Final version</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>טיפים לשימוש יעיל</h2>
+        <ul>
+          <li>
+            לכתוב את הודעת ה‑commit לפני ה‑push, לא אחרי שכבר שכחת את ההקשר.
+          </li>
+          <li>
+            לשלב עם pre-commit hooks (Husky) שמבטיחים תקינות קוד לפני commit.
+          </li>
+          <li>
+            להשתמש ב־tags או issue numbers כשצריך להקשר לשגיאות או feature
+            ספציפי.
+          </li>
+          <li>
+            לעשות commits קטנים ומוקדים במקום commits גדולים עם הרבה שינויים.
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          כתיבת commit messages איכותיות משפרת את קריאות ההיסטוריה של הקוד, מקלה
+          על debugging, משפרת עבודת צוות ומסייעת בניהול פרויקטים גדולים ב־React
+          או בכל פרויקט תוכנה.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

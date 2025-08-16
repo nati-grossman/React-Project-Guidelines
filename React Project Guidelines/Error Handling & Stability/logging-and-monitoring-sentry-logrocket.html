@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Logging & Monitoring – Sentry ו־LogRocket - React Project Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Logging & Monitoring – Sentry ו־LogRocket</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה צריך Logging &amp; Monitoring?</h2>
+        <p>
+          בפיתוח אפליקציות React, תקלות ושגיאות קורות גם בסביבות פרודקשן. כדי
+          לזהות, לנתח ולהגיב לשגיאות בזמן אמת, משתמשים במנגנוני Logging &amp;
+          Monitoring. כלים פופולריים לכך הם Sentry ו־LogRocket.
+        </p>
+      </section>
+
+      <section class="category">
+        <h2>למה זה חשוב?</h2>
+        <ul>
+          <li>מאפשר איתור שגיאות בצורה מיידית ומדויקת.</li>
+          <li>
+            מספק הקשר מלא על מה קרה לפני השגיאה (stack trace, state, props).
+          </li>
+          <li>עוזר למפתחים לשפר את איכות הקוד ולמנוע בעיות חוזרות.</li>
+          <li>משפר את חוויית המשתמש על ידי טיפול מהיר בתקלות.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>איך זה עובד?</h2>
+        <h3>Sentry</h3>
+        <p>
+          Sentry מתמקד בזיהוי שגיאות ריצה (runtime errors) ו־performance
+          monitoring:
+        </p>
+        <pre dir="ltr"><code>import * as Sentry from '@sentry/react';
+
+Sentry.init({
+  dsn: "YOUR_DSN_HERE",
+  tracesSampleRate: 1.0,
+});
+
+function MyComponent() {
+  // אם תתרחש שגיאה, Sentry יתפוס אותה אוטומטית
+  throw new Error("Something went wrong");
+}</code></pre>
+
+        <h3>LogRocket</h3>
+        <p>
+          LogRocket מספק גם session replay – ניתוח חוויית המשתמש עד לרגע השגיאה:
+        </p>
+        <pre dir="ltr"><code>import LogRocket from 'logrocket';
+
+LogRocket.init('your-app-id');
+// הכלי מאפשר לראות מה המשתמש עשה, אילו actions קרו ואיזה state היה ברגע התקלה.</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>טיפים לשימוש יעיל</h2>
+        <ul>
+          <li>שילוב עם Error Boundaries כדי לתפוס שגיאות UI.</li>
+          <li>דאגה שלא לשלוח מידע רגיש למערכות logging.</li>
+          <li>
+            קונפיגורציה חכמה של Alerts ו־Notifications כדי שהצוות יקבל התרעה על
+            בעיות קריטיות.
+          </li>
+          <li>
+            שילוב עם Retry Logic או fallback UI כדי לשפר את חוויית המשתמש.
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          Logging &amp; Monitoring הם רכיב קריטי בכל אפליקציית React גדולה. כלים
+          כמו Sentry ו־LogRocket מאפשרים זיהוי מהיר של בעיות, ניתוח מדויק ושיפור
+          מתמיד של איכות הקוד וחוויית המשתמש.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

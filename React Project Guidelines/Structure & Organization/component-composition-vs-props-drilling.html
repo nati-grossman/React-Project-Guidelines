@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Component Composition vs Props Drilling - React Project Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Component Composition vs Props Drilling</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה זה חשוב?</h2>
+        <p>
+          מעבר מידע בין רכיבים הוא לב־האפליקציה. עושים זאת נכון – מקבלים קוד
+          נקי.
+        </p>
+        <ul>
+          <li>
+            <strong>Props Drilling</strong>: העברת נתונים דרך שכבות מיותרות.
+          </li>
+          <li>
+            <strong>Component Composition</strong>: הרכבת רכיבים קטנים וגמישים.
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>Props Drilling – מה זה ולמה להיזהר</h2>
+        <p>
+          Props Drilling מתרחש כשמעבירים נתונים/פונקציות מלמעלה למטה דרך
+          קומפוננטות רבות, גם אם חלקן לא צריכות את הנתונים.
+        </p>
+        <ul>
+          <li>קומפוננטות ביניים "מעבירות הלאה" props שלא מעניינים אותן.</li>
+          <li>
+            קשה לעקוב מי משתמש במה, וכל שינוי בחתימת ה־props יוצר שרשרת שינויים.
+          </li>
+          <li>ניווט בקוד נהיה מסובך יותר ככל שהעץ גדל.</li>
+        </ul>
+        <h3>דוגמה מלאה ל־Drilling</h3>
+        <pre dir="ltr"><code>// App passes user down several layers
+function App() {
+  const user = { name: 'Dana' };
+  return &lt;Dashboard user={user} /&gt;;
+}
+
+function Dashboard({ user }) {
+  // not using `user` here
+  return &lt;UserList user={user} /&gt;;
+}
+
+function UserList({ user }) {
+  // not using `user` here either
+  return &lt;UserCard user={user} /&gt;;
+}
+
+function UserCard({ user }) {
+  // the only component that actually needs `user`
+  return &lt;div&gt;{user.name}&lt;/div&gt;;
+}</code></pre>
+        <p>
+          שימו לב ששתי קומפוננטות ביניים אינן משתמשות ב־props — רק מעבירות אותם.
+          שינוי בשם ה־prop יחייב עדכון בכל השרשרת.
+        </p>
+      </section>
+
+      <section class="category">
+        <h2>Component Composition – הפתרון החכם</h2>
+        <p>
+          במקום להעביר props דרך רכיבי תיווך, נותנים לרכיבי התיווך לקבל
+          <em>children</em> בלבד. כך רק הרכיב שצריך את הנתון מקבל אותו.
+        </p>
+        <h3>אחרי — Composition של מבנה (בלי העברת user דרך הביניים)</h3>
+        <pre dir="ltr"><code>function Dashboard({ children }) {
+  return &lt;section className="dashboard"&gt;{children}&lt;/section&gt;;
+}
+
+function UserList({ children }) {
+  return &lt;div className="list"&gt;{children}&lt;/div&gt;;
+}
+
+function App() {
+  const user = { name: 'Dana' };
+  return (
+    &lt;Dashboard&gt;
+      &lt;UserList&gt;
+        &lt;UserCard user={user} /&gt; {/* רק כאן צריך את הנתון */}
+      &lt;/UserList&gt;
+    &lt;/Dashboard&gt;
+  );
+}</code></pre>
+        <p>
+          שימו לב: <code>Dashboard</code> ו־<code>UserList</code> אינם מקבלים
+          כלל את <code>user</code>.
+        </p>
+        <h3>Composition בתוך רכיב (פיצול אחריות לרכיבי משנה)</h3>
+        <pre
+          dir="ltr"
+        ><code>const UserCard = ({ children }: { children: React.ReactNode }) =&gt; {
+  return &lt;div className="user-card"&gt;{children}&lt;/div&gt;;
+};
+
+// שימוש
+&lt;UserCard&gt;
+  &lt;UserName user={user} /&gt;
+  &lt;UserAvatar user={user} /&gt;
+&lt;/UserCard&gt;</code></pre>
+        <p>
+          כך נמנעת העברת props מיותרת דרך קומפוננטות ביניים, והאחריות נשארת
+          ממוקדת.
+        </p>
+        <h3>תבניות קומפוזיציה נפוצות</h3>
+        <ul>
+          <li>
+            <strong>Children</strong>: רכיב מעטפת שמכיל רכיבי משנה (כמו הדוגמה).
+          </li>
+          <li>
+            <strong>Slots via props</strong>: העברת רכיבים ספציפיים דרך props
+            (header, footer).
+          </li>
+          <li>
+            <strong>Compound Components</strong>: קבוצה של רכיבים שעובדים יחד
+            תחת API אחד.
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>דוגמה קצרה: Context כתחליף ל־Drilling</h2>
+        <p>כאשר נתונים דרושים להרבה ענפים, Context מונע העברה שכבתית.</p>
+        <pre
+          dir="ltr"
+        ><code>const UserContext = React.createContext&lt;User | null&gt;(null);
+
+function UsersProvider({ children }: { children: React.ReactNode }) {
+  const { users } = useUsers();
+  return &lt;UserContext.Provider value={users[0]}&gt;{children}&lt;/UserContext.Provider&gt;;
+}
+
+function UserName() {
+  const user = React.useContext(UserContext);
+  return &lt;span&gt;{user?.name}&lt;/span&gt;;
+}
+
+// שימוש
+&lt;UsersProvider&gt;
+  &lt;UserCard&gt;
+    &lt;UserName /&gt;
+  &lt;/UserCard&gt;
+&lt;/UsersProvider&gt;</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>מתי להשתמש במה?</h2>
+        <ul>
+          <li>
+            <strong>Props Drilling</strong>: סביר לרכיב־שניים בעומק קטן
+            ובפרויקטים קטנים.
+          </li>
+          <li>
+            <strong>Component Composition</strong>: כשיש הרבה חלקים קטנים שנבנים
+            יחד באופן גמיש.
+          </li>
+          <li>
+            <strong>Context</strong>: כשאותם נתונים נדרשים על פני ענפים מרובים
+            בעץ.
+          </li>
+        </ul>
+        <p>
+          לעיתים הפתרון המשולב הוא הטוב ביותר: Composition ל־UI + Context לשיתוף
+          נתונים.
+        </p>
+      </section>
+
+      <section class="category">
+        <h2>יתרונות Component Composition</h2>
+        <ul>
+          <li>
+            <strong>קוד נקי ומודולרי</strong>: כל קומפוננטה עושה דבר אחד ברור.
+          </li>
+          <li>
+            <strong>קל להרחבה</strong>: מוסיפים children בלי לשבור היררכיית
+            props.
+          </li>
+          <li>
+            <strong>תחזוקה פשוטה</strong>: שינוי ברכיב אחד לא משפיע על כל העץ.
+          </li>
+          <li>
+            <strong>שילוב עם Context API</strong>: כשצריך לשתף state/פונקציות
+            בין רכיבים רבים, משתמשים ב־Context במקום Props Drilling.
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          <strong>Props Drilling</strong>: מתאים לפרויקטים קטנים; בפרויקטים
+          גדולים יוצר מורכבות.
+          <br />
+          <strong>Component Composition</strong>: מקדם מודולריות, קריאות והרחבה
+          קלה.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Virtualization – טעינה חכמה של רשימות גדולות עם React Window - React
+      Project Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Virtualization – טעינה חכמה של רשימות גדולות עם React Window</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה צריך וירטואליזציה?</h2>
+        <ul>
+          <li>שיפור ביצועים משמעותי ברשימות גדולות.</li>
+          <li>פחות אלמנטים ב־DOM בכל רגע נתון.</li>
+          <li>גלילה חלקה גם עם אלפי פריטים.</li>
+        </ul>
+        <p>מייצגים רק את הפריטים שנמצאים כרגע בתצוגה — לא את כל הרשימה.</p>
+      </section>
+
+      <section class="category">
+        <h2>React Window — הספרייה הפופולרית</h2>
+        <p>
+          ספרייה קלה שמרנדרת רק את הפריטים הגלויים, עם חישוב חכם של גודל ומיקום.
+        </p>
+        <pre
+          dir="ltr"
+        ><code>import { FixedSizeList as List } from 'react-window';
+
+const Row = ({ index, style }) =&gt; (
+  &lt;div style={style}&gt;
+    Row {index}
+  &lt;/div&gt;
+);
+
+export default function App() {
+  return (
+    &lt;List
+      height={300}
+      itemCount={1000}
+      itemSize={35}
+      width={300}
+    &gt;
+      {Row}
+    &lt;/List&gt;
+  );
+}</code></pre>
+        <p>כאן מוצגים ב־DOM רק הפריטים שנראים לעין, לא כל ה־1000.</p>
+      </section>
+
+      <section class="category">
+        <h2>מתי להשתמש?</h2>
+        <ul>
+          <li>רשימות ענק (טבלאות, אינפיניטי סקרול).</li>
+          <li>פידים ארוכים של תוכן.</li>
+          <li>כמויות נתונים גדולות מה־API.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>טיפים לשימוש חכם</h2>
+        <ul>
+          <li>
+            בחרו בין <code>FixedSizeList</code> (גובה קבוע) ל־<code
+              >VariableSizeList</code
+            >
+            (גובה משתנה).
+          </li>
+          <li>שלבו עם אינפיניטי סקרול לטעינת נתונים נוספים בזמן גלילה.</li>
+          <li>שמרו על פריט פשוט — עיבוד כבד בתוך פריט יפגע ביתרון.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          Virtualization מאפשר להציג כמויות עצומות של נתונים בלי לפגוע בביצועים.
+          עם React Window תקבלו פתרון קליל, יעיל ונוח לשילוב כמעט בכל רשימה.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

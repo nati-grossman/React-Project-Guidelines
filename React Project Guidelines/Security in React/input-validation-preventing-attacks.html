@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Input Validation – בדיקות קלט מונעות תקיפות - React Project Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Input Validation – בדיקות קלט מונעות תקיפות</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה Input Validation חשוב?</h2>
+        <p>
+          בפיתוח React, קלט מהמשתמש הוא נקודת תורפה פוטנציאלית. בדיקות קלט
+          נכונות מאפשרות למנוע התקפות נפוצות כמו XSS, SQL Injection או שימוש לא
+          חוקי ב‑API.
+        </p>
+        <ul>
+          <li>מונע הזרקת קוד זדוני לאפליקציה או לשרת.</li>
+          <li>מבטיח שהנתונים נכונים ומותאמים ל‑backend.</li>
+          <li>משפר חוויית משתמש עם הודעות שגיאה ברורות ומניעת טעויות.</li>
+          <li>מחזק את האבטחה הכללית של המערכת.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>איך זה עובד</h2>
+        <h3>1. בדיקה בצד לקוח</h3>
+        <p>
+          שימוש ב‑React forms ובחבילת ספריות כמו Formik, React Hook Form או Yup:
+        </p>
+        <pre dir="ltr"><code>import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+
+// Validation schema
+const schema = yup.object({
+  email: yup
+    .string()
+    .email('Invalid email format')
+    .required('Email is required'),
+  password: yup
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+      'Password must contain uppercase, lowercase, number and special character'
+    )
+    .required('Password is required'),
+  age: yup
+    .number()
+    .positive('Age must be positive')
+    .integer('Age must be a whole number')
+    .min(18, 'Must be at least 18 years old')
+    .max(120, 'Age must be realistic')
+    .required('Age is required'),
+});
+
+function LoginForm() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: yupResolver(schema),
+  });
+
+  const onSubmit = async (data) => {
+    try {
+      // Additional client-side sanitization
+      const sanitizedData = {
+        email: data.email.trim().toLowerCase(),
+        password: data.password,
+        age: parseInt(data.age, 10),
+      };
+      
+      console.log('Valid data:', sanitizedData);
+      // Send to API
+    } catch (error) {
+      console.error('Submission error:', error);
+    }
+  };
+
+  return (
+    &lt;form onSubmit={handleSubmit(onSubmit)}&gt;
+      &lt;div&gt;
+        &lt;label htmlFor="email"&gt;Email:&lt;/label&gt;
+        &lt;input
+          id="email"
+          type="email"
+          {...register('email')}
+          aria-invalid={errors.email ? 'true' : 'false'}
+        /&gt;
+        {errors.email && (
+          &lt;span className="error" role="alert"&gt;
+            {errors.email.message}
+          &lt;/span&gt;
+        )}
+      &lt;/div&gt;
+
+      &lt;div&gt;
+        &lt;label htmlFor="password"&gt;Password:&lt;/label&gt;
+        &lt;input
+          id="password"
+          type="password"
+          {...register('password')}
+          aria-invalid={errors.password ? 'true' : 'false'}
+        /&gt;
+        {errors.password && (
+          &lt;span className="error" role="alert"&gt;
+            {errors.password.message}
+          &lt;/span&gt;
+        )}
+      &lt;/div&gt;
+
+      &lt;button type="submit" disabled={isSubmitting}&gt;
+        {isSubmitting ? 'Submitting...' : 'Login'}
+      &lt;/button&gt;
+    &lt;/form&gt;
+  );
+}</code></pre>
+
+        <h3>2. בדיקה בצד שרת</h3>
+        <p>אף פעם לא להסתמך רק על בדיקות בצד הלקוח.</p>
+        <p>שרת חייב לוודא שהקלט עומד בכללים הנדרשים לפני שמירה או עיבוד.</p>
+        <pre dir="ltr"><code>// Server-side validation example (Node.js/Express)
+import joi from 'joi';
+import DOMPurify from 'isomorphic-dompurify';
+
+const userSchema = joi.object({
+  email: joi.string().email().required().max(255),
+  password: joi.string().min(8).max(128).required(),
+  name: joi.string().min(2).max(50).pattern(/^[a-zA-Z\s]+$/).required(),
+  age: joi.number().integer().min(18).max(120).required(),
+});
+
+app.post('/api/users', async (req, res) => {
+  try {
+    // 1. Validate input structure
+    const { error, value } = userSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: error.details.map(detail => detail.message),
+      });
+    }
+
+    // 2. Sanitize string inputs
+    const sanitizedData = {
+      ...value,
+      email: value.email.trim().toLowerCase(),
+      name: DOMPurify.sanitize(value.name.trim()),
+    };
+
+    // 3. Additional business logic validation
+    const existingUser = await User.findOne({ email: sanitizedData.email });
+    if (existingUser) {
+      return res.status(409).json({ error: 'Email already exists' });
+    }
+
+    // 4. Process valid data
+    const user = await User.create(sanitizedData);
+    res.status(201).json({ success: true, userId: user.id });
+    
+  } catch (error) {
+    console.error('Server validation error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});</code></pre>
+
+        <h3>3. Sanitization</h3>
+        <p>ניקוי קלט כדי למנוע הזרקות:</p>
+        <pre dir="ltr"><code>import DOMPurify from 'dompurify';
+import validator from 'validator';
+
+// Custom validation utilities
+class InputValidator {
+  static sanitizeString(input) {
+    if (typeof input !== 'string') return '';
+    
+    // Remove dangerous characters and HTML
+    let sanitized = DOMPurify.sanitize(input, { ALLOWED_TAGS: [] });
+    
+    // Trim whitespace
+    sanitized = sanitized.trim();
+    
+    // Escape special characters
+    sanitized = validator.escape(sanitized);
+    
+    return sanitized;
+  }
+
+  static validateEmail(email) {
+    const sanitized = this.sanitizeString(email);
+    return validator.isEmail(sanitized) ? sanitized.toLowerCase() : null;
+  }
+
+  static validatePhone(phone) {
+    const sanitized = phone.replace(/\D/g, ''); // Remove non-digits
+    return validator.isMobilePhone(sanitized) ? sanitized : null;
+  }
+
+  static validateURL(url) {
+    const sanitized = this.sanitizeString(url);
+    return validator.isURL(sanitized, {
+      protocols: ['http', 'https'],
+      require_protocol: true,
+    }) ? sanitized : null;
+  }
+
+  static validateNumericRange(value, min, max) {
+    const num = parseFloat(value);
+    if (isNaN(num)) return null;
+    return num >= min && num <= max ? num : null;
+  }
+}
+
+// Usage in React component
+function CommentForm() {
+  const [comment, setComment] = useState('');
+  const [errors, setErrors] = useState({});
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    const validationErrors = {};
+    
+    // Sanitize and validate comment
+    const sanitizedComment = InputValidator.sanitizeString(comment);
+    
+    if (!sanitizedComment) {
+      validationErrors.comment = 'Comment is required';
+    } else if (sanitizedComment.length < 10) {
+      validationErrors.comment = 'Comment must be at least 10 characters';
+    } else if (sanitizedComment.length > 500) {
+      validationErrors.comment = 'Comment cannot exceed 500 characters';
+    }
+    
+    // Check for suspicious patterns
+    const suspiciousPatterns = [
+      /&lt;script/i,
+      /javascript:/i,
+      /on\w+\s*=/i,
+      /&lt;iframe/i,
+    ];
+    
+    if (suspiciousPatterns.some(pattern => pattern.test(comment))) {
+      validationErrors.comment = 'Comment contains invalid content';
+    }
+    
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+    
+    // Submit valid comment
+    console.log('Valid comment:', sanitizedComment);
+    setErrors({});
+  };
+
+  return (
+    &lt;form onSubmit={handleSubmit}&gt;
+      &lt;textarea
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        placeholder="Enter your comment..."
+        maxLength={500}
+      /&gt;
+      {errors.comment && (
+        &lt;div className="error"&gt;{errors.comment}&lt;/div&gt;
+      )}
+      &lt;button type="submit"&gt;Submit Comment&lt;/button&gt;
+    &lt;/form&gt;
+  );
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>Custom Hook לבדיקת קלט</h2>
+        <pre dir="ltr"><code>import { useState, useCallback } from 'react';
+
+function useInputValidation(initialValue = '', validators = []) {
+  const [value, setValue] = useState(initialValue);
+  const [error, setError] = useState('');
+  const [touched, setTouched] = useState(false);
+
+  const validate = useCallback((inputValue) => {
+    for (const validator of validators) {
+      const result = validator(inputValue);
+      if (result !== true) {
+        return result; // Return error message
+      }
+    }
+    return true;
+  }, [validators]);
+
+  const handleChange = useCallback((newValue) => {
+    setValue(newValue);
+    
+    if (touched) {
+      const validationResult = validate(newValue);
+      setError(validationResult === true ? '' : validationResult);
+    }
+  }, [touched, validate]);
+
+  const handleBlur = useCallback(() => {
+    setTouched(true);
+    const validationResult = validate(value);
+    setError(validationResult === true ? '' : validationResult);
+  }, [value, validate]);
+
+  const reset = useCallback(() => {
+    setValue(initialValue);
+    setError('');
+    setTouched(false);
+  }, [initialValue]);
+
+  return {
+    value,
+    error,
+    touched,
+    isValid: !error && touched,
+    handleChange,
+    handleBlur,
+    reset,
+  };
+}
+
+// Validator functions
+const validators = {
+  required: (value) => value.trim() !== '' || 'This field is required',
+  minLength: (min) => (value) => 
+    value.length >= min || `Must be at least ${min} characters`,
+  maxLength: (max) => (value) => 
+    value.length <= max || `Cannot exceed ${max} characters`,
+  email: (value) => 
+    /^\S+@\S+\.\S+$/.test(value) || 'Invalid email address',
+  noSpecialChars: (value) => 
+    !/[&lt;&gt;"'&amp;]/.test(value) || 'Special characters not allowed',
+};
+
+// Usage
+function ContactForm() {
+  const name = useInputValidation('', [
+    validators.required,
+    validators.minLength(2),
+    validators.maxLength(50),
+    validators.noSpecialChars,
+  ]);
+
+  const email = useInputValidation('', [
+    validators.required,
+    validators.email,
+  ]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    // Trigger validation on all fields
+    name.handleBlur();
+    email.handleBlur();
+    
+    if (name.isValid && email.isValid) {
+      console.log('Form submitted:', { name: name.value, email: email.value });
+    }
+  };
+
+  return (
+    &lt;form onSubmit={handleSubmit}&gt;
+      &lt;div&gt;
+        &lt;input
+          type="text"
+          placeholder="Name"
+          value={name.value}
+          onChange={(e) => name.handleChange(e.target.value)}
+          onBlur={name.handleBlur}
+          className={name.error ? 'error' : ''}
+        /&gt;
+        {name.error && &lt;span className="error-message"&gt;{name.error}&lt;/span&gt;}
+      &lt;/div&gt;
+
+      &lt;div&gt;
+        &lt;input
+          type="email"
+          placeholder="Email"
+          value={email.value}
+          onChange={(e) => email.handleChange(e.target.value)}
+          onBlur={email.handleBlur}
+          className={email.error ? 'error' : ''}
+        /&gt;
+        {email.error && &lt;span className="error-message"&gt;{email.error}&lt;/span&gt;}
+      &lt;/div&gt;
+
+      &lt;button type="submit"&gt;Submit&lt;/button&gt;
+    &lt;/form&gt;
+  );
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>טיפים למימוש יעיל</h2>
+        <ul>
+          <li>תמיד לבדוק סוג נתונים, אורך, תווים מותרים ומבנה.</li>
+          <li>לשלב בדיקה ב‑UI עם feedback ברור למשתמש.</li>
+          <li>
+            להשתמש ב‑libraries מוכחות עבור forms ו‑validation במקום לבדוק ידנית.
+          </li>
+          <li>לשמור על קונסיסטנטיות בין צד לקוח וצד שרת.</li>
+          <li>לתעד את כללי הבדיקה ולעדכן אותם בהתאם לצרכים.</li>
+          <li>להשתמש ב־TypeScript להגדרת סוגי נתונים ובדיקות קומפילציה.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          Input Validation הוא קו ההגנה הראשון נגד התקפות ואי-סדרים בנתונים.
+          שילוב בדיקות קלט בצד לקוח ובצד שרת, יחד עם sanitization, מבטיח
+          אפליקציה React בטוחה, אמינה וחוויית משתמש טובה.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

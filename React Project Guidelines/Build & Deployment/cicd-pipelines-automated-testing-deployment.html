@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      CI/CD Pipelines – אינטגרציה ובדיקות אוטומטיות לפני הפצה - React Project
+      Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>CI/CD Pipelines – אינטגרציה ובדיקות אוטומטיות לפני הפצה</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה CI/CD חשוב?</h2>
+        <p>
+          בפיתוח מודרני של אפליקציות React, חשוב שכל שינוי בקוד יעבור תהליך
+          אינטגרציה ובדיקות אוטומטיות לפני שהוא מגיע ל‑production. CI/CD
+          Pipelines מאפשרים לבצע זאת בצורה אוטומטית, אמינה ומקצועית.
+        </p>
+        <ul>
+          <li>
+            מבטיח שכל שינוי בקוד נבדק באופן אוטומטי ומונע regression או בעיות
+            ב‑production.
+          </li>
+          <li>חוסך זמן ומונע טעויות אנוש בפריסה ידנית.</li>
+          <li>מאפשר פריסה מהירה, עקבית ובטוחה של גרסאות חדשות.</li>
+          <li>משפר שיתוף פעולה בין צוותי פיתוח ובדיקות.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>עקרונות מפתח</h2>
+        <h3>1. Continuous Integration (CI)</h3>
+        <p>
+          כל push ל‑Git מפעיל build אוטומטי של האפליקציה. כולל הרצת unit tests,
+          integration tests ובדיקות סטטיות.
+        </p>
+        <pre dir="ltr"><code># .github/workflows/ci.yml
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  NODE_VERSION: '18'
+  CACHE_NAME: 'node-modules'
+
+jobs:
+  # Job 1: Code Quality & Linting
+  code-quality:
+    runs-on: ubuntu-latest
+    name: Code Quality Checks
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run ESLint
+        run: npm run lint
+        
+      - name: Run Prettier check
+        run: npm run format:check
+        
+      - name: TypeScript type check
+        run: npm run type-check
+        
+      - name: Check for unused dependencies
+        run: npx depcheck
+        
+      - name: Security audit
+        run: npm audit --audit-level=high
+
+  # Job 2: Unit Tests
+  unit-tests:
+    runs-on: ubuntu-latest
+    name: Unit Tests
+    needs: code-quality
+    
+    strategy:
+      matrix:
+        node-version: [16, 18, 20]
+        
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          
+      - run: npm ci
+      
+      - name: Run unit tests
+        run: npm run test:unit -- --coverage --watchAll=false
+        
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+
+  # Job 3: Build Application
+  build:
+    runs-on: ubuntu-latest
+    name: Build Application
+    needs: [code-quality, unit-tests]
+    
+    strategy:
+      matrix:
+        environment: [development, staging, production]
+        
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - run: npm ci
+      
+      - name: Set environment variables
+        run: |
+          if [ "${{ matrix.environment }}" = "development" ]; then
+            echo "REACT_APP_API_URL=https://api.dev.example.com" >> $GITHUB_ENV
+            echo "REACT_APP_DEBUG=true" >> $GITHUB_ENV
+          elif [ "${{ matrix.environment }}" = "staging" ]; then
+            echo "REACT_APP_API_URL=https://api.staging.example.com" >> $GITHUB_ENV
+            echo "REACT_APP_DEBUG=false" >> $GITHUB_ENV
+          else
+            echo "REACT_APP_API_URL=https://api.example.com" >> $GITHUB_ENV
+            echo "REACT_APP_DEBUG=false" >> $GITHUB_ENV
+          fi
+          echo "REACT_APP_VERSION=${{ github.sha }}" >> $GITHUB_ENV
+          echo "REACT_APP_BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+      
+      - name: Build application
+        run: npm run build
+        env:
+          REACT_APP_GOOGLE_ANALYTICS_ID: ${{ secrets.GOOGLE_ANALYTICS_ID }}
+          REACT_APP_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+      
+      - name: Analyze bundle size
+        run: npx bundlesize
+        
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-${{ matrix.environment }}
+          path: build/
+          retention-days: 30
+
+  # Job 4: Integration Tests
+  integration-tests:
+    runs-on: ubuntu-latest
+    name: Integration Tests
+    needs: build
+    services:
+      api-mock:
+        image: mockserver/mockserver
+        ports:
+          - 1080:1080
+    
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - run: npm ci
+      
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-development
+          path: build/
+      
+      - name: Setup test environment
+        run: |
+          echo "REACT_APP_API_URL=http://localhost:1080" > .env.test.local
+          
+      - name: Run integration tests
+        run: npm run test:integration
+        
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: integration-test-results
+          path: test-results/
+
+  # Job 5: E2E Tests
+  e2e-tests:
+    runs-on: ubuntu-latest
+    name: End-to-End Tests
+    needs: build
+    
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - run: npm ci
+      
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-development
+          path: build/
+      
+      - name: Start application
+        run: |
+          npx serve -s build -l 3000 &
+          npx wait-on http://localhost:3000
+        
+      - name: Run Cypress tests
+        uses: cypress-io/github-action@v6
+        with:
+          start: echo "App already running"
+          wait-on: 'http://localhost:3000'
+          wait-on-timeout: 120
+          browser: chrome
+          record: true
+        env:
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Upload E2E screenshots
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots</code></pre>
+
+        <h3>2. Continuous Deployment (CD)</h3>
+        <pre dir="ltr"><code># .github/workflows/cd.yml
+name: Continuous Deployment
+
+on:
+  push:
+    branches: [ main ]
+  workflow_run:
+    workflows: ["Continuous Integration"]
+    types: [completed]
+    branches: [ main ]
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    name: Deploy to Staging
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    environment: staging
+    
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - run: npm ci
+      
+      - name: Build for staging
+        run: npm run build
+        env:
+          REACT_APP_API_URL: https://api.staging.example.com
+          REACT_APP_ENVIRONMENT: staging
+          REACT_APP_VERSION: ${{ github.sha }}
+          REACT_APP_GOOGLE_ANALYTICS_ID: ${{ secrets.STAGING_GOOGLE_ANALYTICS_ID }}
+      
+      - name: Deploy to Netlify
+        uses: nwtgck/actions-netlify@v2.0
+        with:
+          publish-dir: './build'
+          production-branch: main
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: "Deploy from GitHub Actions - ${{ github.sha }}"
+          alias: staging-${{ github.head_ref }}
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_STAGING_SITE_ID }}
+      
+      - name: Run smoke tests on staging
+        run: |
+          npx wait-on https://staging.example.com
+          npm run test:smoke -- --baseUrl=https://staging.example.com
+      
+      - name: Notify team on Slack
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: 'Staging deployment completed'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    name: Deploy to Production
+    needs: deploy-staging
+    environment: production
+    if: success()
+    
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - run: npm ci
+      
+      - name: Build for production
+        run: npm run build
+        env:
+          REACT_APP_API_URL: https://api.example.com
+          REACT_APP_ENVIRONMENT: production
+          REACT_APP_VERSION: ${{ github.sha }}
+          REACT_APP_GOOGLE_ANALYTICS_ID: ${{ secrets.GOOGLE_ANALYTICS_ID }}
+          REACT_APP_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+      
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.ORG_ID }}
+          vercel-project-id: ${{ secrets.PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: ./
+      
+      - name: Deploy to AWS S3
+        run: |
+          aws s3 sync build/ s3://${{ secrets.S3_BUCKET_NAME }} --delete
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+      
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }}
+          release_name: Release v${{ github.run_number }}
+          body: |
+            Changes in this Release:
+            ${{ github.event.head_commit.message }}
+            
+            Deployed to: https://example.com
+            Commit: ${{ github.sha }}
+          draft: false
+          prerelease: false
+      
+      - name: Post-deployment health check
+        run: |
+          npx wait-on https://example.com
+          npm run test:health -- --baseUrl=https://example.com
+      
+      - name: Notify team on success
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          text: '🚀 Production deployment successful!'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}</code></pre>
+
+        <h3>3. בדיקות אוטומטיות</h3>
+        <pre dir="ltr"><code># package.json scripts for testing
+{
+  "scripts": {
+    "test": "react-scripts test",
+    "test:unit": "react-scripts test --testPathPattern=src/__tests__/unit",
+    "test:integration": "react-scripts test --testPathPattern=src/__tests__/integration",
+    "test:e2e": "cypress run",
+    "test:e2e:open": "cypress open",
+    "test:smoke": "cypress run --spec 'cypress/e2e/smoke/**/*'",
+    "test:health": "cypress run --spec 'cypress/e2e/health/**/*'",
+    "test:coverage": "npm run test:unit -- --coverage --watchAll=false",
+    "test:ci": "npm run test:unit -- --coverage --watchAll=false --ci"
+  }
+}
+
+# Jest configuration for CI
+# jest.config.js
+module.exports = {
+  collectCoverageFrom: [
+    'src/**/*.{js,jsx,ts,tsx}',
+    '!src/**/*.d.ts',
+    '!src/index.js',
+    '!src/serviceWorker.js',
+    '!src/**/*.stories.{js,jsx,ts,tsx}',
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
+  },
+  testEnvironment: 'jsdom',
+  setupFilesAfterEnv: ['&lt;rootDir&gt;/src/setupTests.js'],
+  moduleNameMapping: {
+    '^@/(.*)$': '&lt;rootDir&gt;/src/$1',
+  },
+  reporters: [
+    'default',
+    ['jest-junit', {
+      outputDirectory: 'test-results',
+      outputName: 'jest-results.xml',
+    }],
+  ],
+};
+
+# Cypress configuration for E2E tests
+# cypress.config.js
+const { defineConfig } = require('cypress');
+
+module.exports = defineConfig({
+  e2e: {
+    baseUrl: 'http://localhost:3000',
+    supportFile: 'cypress/support/e2e.js',
+    specPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}',
+    video: true,
+    screenshotOnRunFailure: true,
+    viewportWidth: 1280,
+    viewportHeight: 720,
+    defaultCommandTimeout: 10000,
+    requestTimeout: 10000,
+    responseTimeout: 30000,
+    env: {
+      apiUrl: 'http://localhost:3001',
+    },
+    setupNodeEvents(on, config) {
+      // Code coverage plugin
+      require('@cypress/code-coverage/task')(on, config);
+      
+      // Environment-specific configuration
+      const environment = config.env.ENVIRONMENT || 'development';
+      const environments = {
+        development: {
+          baseUrl: 'http://localhost:3000',
+          apiUrl: 'http://localhost:3001',
+        },
+        staging: {
+          baseUrl: 'https://staging.example.com',
+          apiUrl: 'https://api.staging.example.com',
+        },
+        production: {
+          baseUrl: 'https://example.com',
+          apiUrl: 'https://api.example.com',
+        },
+      };
+      
+      return { ...config, ...environments[environment] };
+    },
+  },
+});
+
+# Example smoke test
+# cypress/e2e/smoke/basic-functionality.cy.js
+describe('Smoke Tests', () => {
+  it('should load the homepage', () => {
+    cy.visit('/');
+    cy.contains('React Project Guidelines');
+    cy.get('[data-testid="main-content"]').should('be.visible');
+  });
+
+  it('should navigate to different sections', () => {
+    cy.visit('/');
+    cy.get('[data-testid="navigation"]').within(() => {
+      cy.contains('Performance').click();
+    });
+    cy.url().should('include', 'performance');
+  });
+
+  it('should handle API calls', () => {
+    cy.intercept('GET', '/api/health', { fixture: 'health.json' }).as('healthCheck');
+    cy.visit('/');
+    cy.wait('@healthCheck');
+    cy.get('[data-testid="status"]').should('contain', 'healthy');
+  });
+});
+
+# Health check test
+# cypress/e2e/health/application-health.cy.js
+describe('Application Health Checks', () => {
+  it('should respond to health endpoint', () => {
+    cy.request('GET', `${Cypress.config('baseUrl')}/health`)
+      .then((response) => {
+        expect(response.status).to.eq(200);
+        expect(response.body).to.have.property('status', 'ok');
+      });
+  });
+
+  it('should load critical resources', () => {
+    cy.visit('/');
+    
+    // Check that main CSS is loaded
+    cy.get('link[rel="stylesheet"]').should('exist');
+    
+    // Check that main JS bundle is loaded
+    cy.window().should('have.property', 'React');
+    
+    // Check that no console errors occurred
+    cy.window().then((win) => {
+      expect(win.console.error).to.not.have.been.called;
+    });
+  });
+});</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>Advanced CI/CD Patterns</h2>
+        <h3>1. Feature Branch Workflows</h3>
+        <pre dir="ltr"><code># .github/workflows/feature-branch.yml
+name: Feature Branch CI
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  validate-pr:
+    runs-on: ubuntu-latest
+    name: Validate Pull Request
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history for proper diff
+          
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v40
+        with:
+          files: |
+            src/**
+            public/**
+            package*.json
+            
+      - name: Setup Node.js
+        if: steps.changed-files.outputs.any_changed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: npm ci
+        
+      - name: Run tests on changed files
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          # Run tests only for changed files
+          npx jest --listTests --findRelatedTests ${{ steps.changed-files.outputs.all_changed_files }}
+          
+      - name: Build and deploy preview
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          npm run build
+          
+      - name: Deploy preview to Netlify
+        if: steps.changed-files.outputs.any_changed == 'true'
+        uses: nwtgck/actions-netlify@v2.0
+        with:
+          publish-dir: './build'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: "Preview for PR #${{ github.event.number }}"
+          alias: pr-${{ github.event.number }}
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          
+      - name: Comment PR with preview link
+        if: steps.changed-files.outputs.any_changed == 'true'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `🚀 Preview deployment ready!
+              
+              **Preview URL**: https://pr-${{ github.event.number }}--your-site.netlify.app
+              **Changes**: ${{ steps.changed-files.outputs.all_changed_files }}
+              
+              This preview will be automatically updated on new commits.`
+            });</code></pre>
+
+        <h3>2. Multi-Environment Pipeline</h3>
+        <pre dir="ltr"><code># .github/workflows/multi-env.yml
+name: Multi-Environment Deployment
+
+on:
+  push:
+    branches: [ main, develop, release/* ]
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  determine-environment:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.env.outputs.environment }}
+      deploy: ${{ steps.env.outputs.deploy }}
+    
+    steps:
+      - name: Determine target environment
+        id: env
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "deploy=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            echo "environment=staging" >> $GITHUB_OUTPUT
+            echo "deploy=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/heads/release/* ]]; then
+            echo "environment=staging" >> $GITHUB_OUTPUT
+            echo "deploy=true" >> $GITHUB_OUTPUT
+          else
+            echo "environment=development" >> $GITHUB_OUTPUT
+            echo "deploy=false" >> $GITHUB_OUTPUT
+          fi
+
+  build-and-test:
+    runs-on: ubuntu-latest
+    needs: determine-environment
+    strategy:
+      matrix:
+        environment: [${{ needs.determine-environment.outputs.environment }}]
+    
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - run: npm ci
+      
+      - name: Load environment configuration
+        run: |
+          case "${{ matrix.environment }}" in
+            "production")
+              echo "REACT_APP_API_URL=https://api.example.com" >> $GITHUB_ENV
+              echo "REACT_APP_DEBUG=false" >> $GITHUB_ENV
+              ;;
+            "staging")
+              echo "REACT_APP_API_URL=https://api.staging.example.com" >> $GITHUB_ENV
+              echo "REACT_APP_DEBUG=false" >> $GITHUB_ENV
+              ;;
+            "development")
+              echo "REACT_APP_API_URL=https://api.dev.example.com" >> $GITHUB_ENV
+              echo "REACT_APP_DEBUG=true" >> $GITHUB_ENV
+              ;;
+          esac
+      
+      - name: Run tests
+        run: npm run test:ci
+        
+      - name: Build application
+        run: npm run build
+        
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-${{ matrix.environment }}
+          path: build/
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [determine-environment, build-and-test]
+    if: needs.determine-environment.outputs.deploy == 'true'
+    environment: ${{ needs.determine-environment.outputs.environment }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-${{ needs.determine-environment.outputs.environment }}
+          path: build/
+      
+      - name: Deploy to appropriate platform
+        run: |
+          case "${{ needs.determine-environment.outputs.environment }}" in
+            "production")
+              # Deploy to production (Vercel)
+              echo "Deploying to production..."
+              ;;
+            "staging")
+              # Deploy to staging (Netlify)
+              echo "Deploying to staging..."
+              ;;
+          esac</code></pre>
+
+        <h3>3. Security ו-Quality Gates</h3>
+        <pre dir="ltr"><code># .github/workflows/security-checks.yml
+name: Security and Quality Gates
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 2 * * 1'  # Weekly security scan
+
+jobs:
+  security-audit:
+    runs-on: ubuntu-latest
+    name: Security Audit
+    
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - run: npm ci
+      
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate
+        
+      - name: Run Snyk security scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=medium
+          
+      - name: Upload Snyk results to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: snyk.sarif
+
+  code-quality:
+    runs-on: ubuntu-latest
+    name: Code Quality Analysis
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for better analysis
+          
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - run: npm ci
+      
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          
+      - name: CodeClimate coverage
+        uses: paambaati/codeclimate-action@v5.0.0
+        env:
+          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
+        with:
+          coverageCommand: npm run test:coverage
+          debug: true
+
+  performance-budget:
+    runs-on: ubuntu-latest
+    name: Performance Budget Check
+    
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - run: npm ci
+      - run: npm run build
+      
+      - name: Check bundle size
+        run: npx bundlesize
+        
+      - name: Lighthouse CI
+        run: |
+          npm install -g @lhci/cli@0.12.x
+          lhci autorun
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+  accessibility-tests:
+    runs-on: ubuntu-latest
+    name: Accessibility Tests
+    
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - run: npm ci
+      - run: npm run build
+      
+      - name: Start application
+        run: |
+          npx serve -s build -l 3000 &
+          npx wait-on http://localhost:3000
+          
+      - name: Run accessibility tests
+        run: |
+          npx pa11y-ci --sitemap http://localhost:3000/sitemap.xml
+          
+      - name: Axe accessibility scan
+        run: |
+          npx axe-cli http://localhost:3000 --exit</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>Monitoring ו-Alerting</h2>
+        <pre dir="ltr"><code># .github/workflows/monitoring.yml
+name: Deployment Monitoring
+
+on:
+  workflow_run:
+    workflows: ["Continuous Deployment"]
+    types: [completed]
+
+jobs:
+  post-deployment-monitoring:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+      - name: Wait for deployment to be ready
+        run: sleep 60
+        
+      - name: Health check
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://example.com/health)
+          if [ $response -ne 200 ]; then
+            echo "Health check failed with status $response"
+            exit 1
+          fi
+          
+      - name: Performance check
+        run: |
+          # Use curl to measure response time
+          response_time=$(curl -s -o /dev/null -w "%{time_total}" https://example.com)
+          threshold=2.0
+          if (( $(echo "$response_time > $threshold" | bc -l) )); then
+            echo "Performance degradation detected: ${response_time}s > ${threshold}s"
+            exit 1
+          fi
+          
+      - name: Sentry deployment notification
+        run: |
+          curl -X POST \
+            https://sentry.io/api/0/organizations/${{ secrets.SENTRY_ORG }}/releases/ \
+            -H "Authorization: Bearer ${{ secrets.SENTRY_AUTH_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "version": "${{ github.sha }}",
+              "projects": ["${{ secrets.SENTRY_PROJECT }}"],
+              "dateReleased": "'$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)'"
+            }'
+            
+      - name: Notify team on failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: '🚨 Post-deployment checks failed!'
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+# Rollback workflow
+# .github/workflows/rollback.yml
+name: Emergency Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to rollback'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - staging
+          - production
+      version:
+        description: 'Version/commit to rollback to'
+        required: true
+        type: string
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.version }}
+          
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - run: npm ci
+      
+      - name: Build application
+        run: npm run build
+        env:
+          REACT_APP_API_URL: ${{ secrets.API_URL }}
+          REACT_APP_VERSION: ${{ github.event.inputs.version }}
+          
+      - name: Deploy rollback
+        run: |
+          case "${{ github.event.inputs.environment }}" in
+            "production")
+              # Deploy to production
+              echo "Rolling back production to ${{ github.event.inputs.version }}"
+              ;;
+            "staging")
+              # Deploy to staging
+              echo "Rolling back staging to ${{ github.event.inputs.version }}"
+              ;;
+          esac
+          
+      - name: Verify rollback
+        run: |
+          sleep 30
+          curl -f https://example.com/health
+          
+      - name: Notify team
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: '⏪ Rollback to ${{ github.event.inputs.version }} completed'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>טיפים למימוש יעיל</h2>
+        <ul>
+          <li>
+            לשלב linting, type checking ובדיקות יחידה כבר בשלב ה‑CI הראשון.
+          </li>
+          <li>
+            להשתמש ב‑feature branches ו‑PRs כדי לוודא שכל קוד חדש נבדק לפני
+            merge.
+          </li>
+          <li>
+            להוסיף notifications (Slack, Email) במקרה של כשל build או בדיקות.
+          </li>
+          <li>
+            להגדיר staging environment שבו הקוד מופץ אוטומטית לפני production.
+          </li>
+          <li>לכלול בדיקות אבטחה, performance ו-accessibility ב-pipeline.</li>
+          <li>להשתמש ב-matrix builds לבדיקה על מספר גרסאות Node.js.</li>
+          <li>לשמור artifacts של builds למקרה של צורך ב-rollback.</li>
+          <li>לנטר post-deployment metrics וhealth checks.</li>
+          <li>להגדיר emergency rollback workflows.</li>
+          <li>לשלב secret scanning ו-dependency vulnerability checks.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>Pipeline Configuration Best Practices</h2>
+        <pre dir="ltr"><code># package.json - CI/CD related scripts
+{
+  "scripts": {
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "test:ci": "CI=true npm test -- --coverage --watchAll=false",
+    "test:unit": "npm test -- --testPathPattern='__tests__/unit'",
+    "test:integration": "npm test -- --testPathPattern='__tests__/integration'",
+    "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "npm run lint -- --fix",
+    "format": "prettier --write src/",
+    "format:check": "prettier --check src/",
+    "type-check": "tsc --noEmit",
+    "analyze": "npx bundlesize",
+    "audit": "npm audit --audit-level=moderate",
+    "audit:fix": "npm audit fix",
+    "predeploy": "npm run build",
+    "deploy": "npm run predeploy && gh-pages -d build"
+  }
+}
+
+# .bundlesize.config.json
+[
+  {
+    "path": "build/static/js/*.js",
+    "maxSize": "300kb",
+    "compression": "gzip"
+  },
+  {
+    "path": "build/static/css/*.css",
+    "maxSize": "50kb",
+    "compression": "gzip"
+  }
+]
+
+# lighthouserc.js
+module.exports = {
+  ci: {
+    collect: {
+      url: ['http://localhost:3000'],
+      startServerCommand: 'npm start',
+      startServerReadyPattern: 'compiled successfully',
+    },
+    assert: {
+      assertions: {
+        'categories:performance': ['warn', { minScore: 0.8 }],
+        'categories:accessibility': ['error', { minScore: 0.9 }],
+        'categories:best-practices': ['warn', { minScore: 0.8 }],
+        'categories:seo': ['warn', { minScore: 0.8 }],
+      },
+    },
+    upload: {
+      target: 'temporary-public-storage',
+    },
+  },
+};</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          CI/CD Pipelines הם כלי קריטי לפיתוח מודרני ב‑React. שילוב של build
+          אוטומטי, בדיקות אוטומטיות מרובות שכבות (unit, integration, E2E),
+          בדיקות אבטחה ו-performance, ופריסה מבוקרת עם monitoring מבטיח אפליקציה
+          יציבה, בטוחה ומהירה לפריסה, תוך חיסכון בזמן ובטעויות אנוש. Pipeline
+          טוב מאפשר למפתחים להתמקד בפיתוח תוך שמירה על איכות גבוהה ויציבות
+          מערכת.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

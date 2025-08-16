@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      CSS Modules / Styled Components / Tailwind – יתרונות וחסרונות - React
+      Project Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>CSS Modules / Styled Components / Tailwind – יתרונות וחסרונות</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>מבוא</h2>
+        <p>
+          בפיתוח React, קיימות מספר גישות לניהול CSS: CSS Modules, Styled
+          Components ו־Tailwind. לכל גישה יתרונות וחסרונות, והבחירה תלויה בצרכי
+          הפרויקט והעדפות הצוות.
+        </p>
+      </section>
+
+      <section class="category">
+        <h2>CSS Modules</h2>
+        <h3>יתרונות</h3>
+        <ul>
+          <li>scope מקומי לכל קומפוננטה, מונע התנגשויות שמות.</li>
+          <li>קל לשלב בפרויקטים קיימים עם CSS רגיל.</li>
+          <li>ביצועים טובים ללא runtime overhead.</li>
+        </ul>
+        <h3>חסרונות</h3>
+        <ul>
+          <li>פחות דינמי — סטיילינג מותנה לפי props מורכב יותר.</li>
+          <li>דורש תחזוקה של קבצי CSS נפרדים לכל קומפוננטה.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>Styled Components</h2>
+        <h3>יתרונות</h3>
+        <ul>
+          <li>CSS-in-JS — כתיבת CSS בתוך JavaScript.</li>
+          <li>סטיילינג דינמי על בסיס props ו־state.</li>
+          <li>קומפוננטות self-contained — קל להעברה ושיתוף.</li>
+        </ul>
+        <h3>חסרונות</h3>
+        <ul>
+          <li>overhead בזמן ריצה — עלול להשפיע בבניית UI גדול.</li>
+          <li>תלות בספרייה חיצונית ודפוס ייחודי ללמידה.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>Tailwind</h2>
+        <h3>יתרונות</h3>
+        <ul>
+          <li>Utility-first — מהיר לבניית UI ללא כתיבת CSS חדש.</li>
+          <li>אחידות עיצובית גבוהה.</li>
+          <li>מפחית כמות CSS ומקל על refactoring.</li>
+        </ul>
+        <h3>חסרונות</h3>
+        <ul>
+          <li>JSX עמוס ב־className — לעיתים פחות קריא.</li>
+          <li>דורש היכרות עם הכלים (PostCSS, PurgeCSS וכו').</li>
+          <li>פחות גמיש לסטיילינג דינמי לפי props לעומת CSS-in-JS.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום ובחירה</h2>
+        <ul>
+          <li>
+            <strong>CSS Modules</strong> — מתאים לפרויקטים קיימים, Scope מקומי,
+            ביצועים טובים.
+          </li>
+          <li>
+            <strong>Styled Components</strong> — סטיילינג דינמי self-contained,
+            אך עם runtime overhead.
+          </li>
+          <li>
+            <strong>Tailwind</strong> — בניית UI מהירה ואחידה, אך JSX עלול להיות
+            עמוס.
+          </li>
+        </ul>
+        <p>בחרו לפי גודל הפרויקט, סוג ה־UI, דרישות דינמיות ונוחות הצוות.</p>
+      </section>
+    </main>
+  </body>
+</html>

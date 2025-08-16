@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>React Project Guidelines</title>
+    <link rel="stylesheet" href="styles.css" />
+    <!--
+    Simple, readable styles with light backgrounds and pleasant spacing.
+    All links currently point to "#" as placeholders.
+  --></head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>React Project Guidelines</h1>
+      </header>
+
+      <section class="grid" aria-label="Categories">
+        <section class="category" aria-labelledby="structure-heading">
+          <h2 id="structure-heading">Structure &amp; Organization</h2>
+          <ul>
+            <li>
+              <a
+                href="Structure%20%26%20Organization/feature-based-folder-structure.html"
+                >Feature-Based Folder Structure</a
+              >
+            </li>
+            <li>
+              <a
+                href="Structure%20%26%20Organization/barrel-exports-index-ts.html"
+                >Barrel Exports (index.ts)</a
+              >
+            </li>
+            <li>
+              <a href="Structure%20%26%20Organization/naming-conventions.html"
+                >Naming Conventions</a
+              >
+            </li>
+            <li>
+              <a href="Structure%20%26%20Organization/organizing-hooks.html"
+                >Organizing Hooks</a
+              >
+            </li>
+            <li>
+              <a
+                href="Structure%20%26%20Organization/component-composition-vs-props-drilling.html"
+                >Component Composition vs Props Drilling</a
+              >
+            </li>
+            <li>
+              <a
+                href="Structure%20%26%20Organization/separation-of-logic-and-ui.html"
+                >Separation of Logic and UI</a
+              >
+            </li>
+          </ul>
+        </section>
+
+        <section class="category" aria-labelledby="state-management-heading">
+          <h2 id="state-management-heading">State Management</h2>
+          <ul>
+            <li>
+              <a href="State%20Management/context-api-when-to-use-it.html"
+                >Context API – When to Use (and When Not)</a
+              >
+            </li>
+            <li>
+              <a href="State%20Management/redux-toolkit-modern-slices.html"
+                >Redux Toolkit – Modern Structure (Slices)</a
+              >
+            </li>
+            <li>
+              <a href="State%20Management/recoil-lightweight-state.html"
+                >Recoil – Lightweight Global State</a
+              >
+            </li>
+            <li>
+              <a href="State%20Management/react-query-swr-api-cache.html"
+                >React Query / SWR – API and Cache Management</a
+              >
+            </li>
+            <li>
+              <a href="State%20Management/local-vs-global-state.html"
+                >Local vs Global State – When to Use Each</a
+              >
+            </li>
+          </ul>
+        </section>
+
+        <section
+          class="category"
+          aria-labelledby="performance-optimization-heading"
+        >
+          <h2 id="performance-optimization-heading">
+            Performance &amp; Optimization
+          </h2>
+          <ul>
+            <li>
+              <a
+                href="Performance%20%26%20Optimization/avoid-unnecessary-re-renders.html"
+                >Avoid Unnecessary Re-renders – Identify and Fix</a
+              >
+            </li>
+            <li>
+              <a
+                href="Performance%20%26%20Optimization/code-splitting-react-lazy-suspense.html"
+                >Smart Loading – Code Splitting with React.lazy and Suspense</a
+              >
+            </li>
+            <li>
+              <a
+                href="Performance%20%26%20Optimization/virtualization-react-window.html"
+                >Virtualization – Efficient Large Lists with React Window</a
+              >
+            </li>
+            <li>
+              <a href="Performance%20%26%20Optimization/useeffect-cleanup.html"
+                >useEffect Cleanup – Preventing Resource Leaks</a
+              >
+            </li>
+            <li>
+              <a
+                href="Performance%20%26%20Optimization/memoization-usememo-usecallback-react-memo.html"
+                >Memoization – useMemo, useCallback, React.memo</a
+              >
+            </li>
+          </ul>
+        </section>
+
+        <section class="category" aria-labelledby="error-handling-heading">
+          <h2 id="error-handling-heading">Error Handling &amp; Stability</h2>
+          <ul>
+            <li>
+              <a
+                href="Error%20Handling%20%26%20Stability/error-boundaries-in-react.html"
+                >Error Boundaries in React</a
+              >
+            </li>
+            <li>
+              <a
+                href="Error%20Handling%20%26%20Stability/retry-logic-in-api-calls.html"
+                >Retry Logic in API Calls</a
+              >
+            </li>
+            <li>
+              <a
+                href="Error%20Handling%20%26%20Stability/logging-and-monitoring-sentry-logrocket.html"
+                >Logging &amp; Monitoring – Sentry &amp; LogRocket</a
+              >
+            </li>
+            <li>
+              <a
+                href="Error%20Handling%20%26%20Stability/defensive-coding-input-validation-edge-cases.html"
+                >Defensive Coding – Input Validation &amp; Edge Cases</a
+              >
+            </li>
+          </ul>
+        </section>
+
+        <section class="category" aria-labelledby="styling-ui-heading">
+          <h2 id="styling-ui-heading">Styling &amp; UI Patterns</h2>
+          <ul>
+            <li>
+              <a
+                href="Styling%20%26%20UI%20Patterns/css-modules-best-practices.html"
+                >CSS Modules Best Practices</a
+              >
+            </li>
+            <li>
+              <a
+                href="Styling%20%26%20UI%20Patterns/css-modules-vs-styled-components-vs-tailwind.html"
+                >CSS Modules / Styled Components / Tailwind – Pros &amp; Cons</a
+              >
+            </li>
+            <li>
+              <a
+                href="Styling%20%26%20UI%20Patterns/design-systems-storybook-component-libraries.html"
+                >Design Systems – Storybook / Component Libraries</a
+              >
+            </li>
+            <li>
+              <a
+                href="Styling%20%26%20UI%20Patterns/responsive-design-guidelines.html"
+                >Responsive Design Guidelines</a
+              >
+            </li>
+            <li>
+              <a href="Styling%20%26%20UI%20Patterns/theming-color-schemes.html"
+                >Theming – Dynamic Color Schemes</a
+              >
+            </li>
+          </ul>
+        </section>
+
+        <section
+          class="category"
+          aria-labelledby="collaboration-workflow-heading"
+        >
+          <h2 id="collaboration-workflow-heading">
+            Collaboration &amp; Workflow
+          </h2>
+          <ul>
+            <li>
+              <a
+                href="Collaboration%20%26%20Workflow/code-review-checklist-for-react-projects.html"
+                >Code Review Checklist for React Projects</a
+              >
+            </li>
+            <li>
+              <a
+                href="Collaboration%20%26%20Workflow/eslint-prettier-code-consistency.html"
+                >ESLint + Prettier – Code Consistency</a
+              >
+            </li>
+            <li>
+              <a
+                href="Collaboration%20%26%20Workflow/husky-lint-staged-pre-commit-checks.html"
+                >Husky + Lint-Staged – Pre-commit Checks</a
+              >
+            </li>
+            <li>
+              <a
+                href="Collaboration%20%26%20Workflow/writing-useful-commit-messages.html"
+                >Writing Useful Commit Messages</a
+              >
+            </li>
+            <li>
+              <a
+                href="Collaboration%20%26%20Workflow/git-branching-strategies.html"
+                >Git Branching Strategies</a
+              >
+            </li>
+          </ul>
+        </section>
+
+        <section class="category" aria-labelledby="api-data-fetching-heading">
+          <h2 id="api-data-fetching-heading">API &amp; Data Fetching</h2>
+          <ul>
+            <li>
+              <a
+                href="API%20%26%20Data%20Fetching/react-query-caching-and-data-synchronization.html"
+                >React Query – Caching and Data Synchronization</a
+              >
+            </li>
+            <li>
+              <a href="API%20%26%20Data%20Fetching/fetch-axios-rest-apis.html"
+                >Fetch / Axios – Working with REST APIs</a
+              >
+            </li>
+            <li>
+              <a
+                href="API%20%26%20Data%20Fetching/polling-subscriptions-real-time-updates.html"
+                >Polling / Subscriptions – Real-time Data Updates</a
+              >
+            </li>
+            <li>
+              <a
+                href="API%20%26%20Data%20Fetching/error-handling-api-calls.html"
+                >Error Handling in API Calls – Structured Error Management</a
+              >
+            </li>
+            <li>
+              <a
+                href="API%20%26%20Data%20Fetching/pagination-infinite-scroll.html"
+                >Pagination & Infinite Scroll – Loading Large Datasets</a
+              >
+            </li>
+          </ul>
+        </section>
+
+        <section class="category" aria-labelledby="testing-heading">
+          <h2 id="testing-heading">Testing</h2>
+          <ul>
+            <li>
+              <a href="Testing/unit-testing-with-react-testing-library.html"
+                >Unit Testing with React Testing Library</a
+              >
+            </li>
+            <li>
+              <a href="Testing/integration-testing-component-interaction.html"
+                >Integration Testing – Component Interaction</a
+              >
+            </li>
+            <li>
+              <a href="Testing/end-to-end-testing-cypress-playwright.html"
+                >End-to-End Testing – Cypress / Playwright</a
+              >
+            </li>
+            <li>
+              <a href="Testing/mocking-api-calls-test-isolation.html"
+                >Mocking API Calls – Test Isolation</a
+              >
+            </li>
+            <li>
+              <a href="Testing/continuous-testing-ci-cd-automation.html"
+                >Continuous Testing – CI/CD Automation</a
+              >
+            </li>
+          </ul>
+        </section>
+
+        <section class="category" aria-labelledby="security-heading">
+          <h2 id="security-heading">Security in React</h2>
+          <ul>
+            <li>
+              <a
+                href="Security%20in%20React/preventing-xss-in-react-applications.html"
+                >Preventing XSS in React Applications</a
+              >
+            </li>
+            <li>
+              <a
+                href="Security%20in%20React/secure-api-calls-https-tokens-cors.html"
+                >Secure API Calls – HTTPS, Tokens, CORS</a
+              >
+            </li>
+            <li>
+              <a
+                href="Security%20in%20React/authentication-authorization-user-permissions.html"
+                >Authentication & Authorization – User Permissions</a
+              >
+            </li>
+            <li>
+              <a
+                href="Security%20in%20React/input-validation-preventing-attacks.html"
+                >Input Validation – Preventing Attacks</a
+              >
+            </li>
+            <li>
+              <a
+                href="Security%20in%20React/content-security-policy-csp-protection.html"
+                >Content Security Policy (CSP) – Client-Side Protection</a
+              >
+            </li>
+          </ul>
+        </section>
+
+        <section class="category" aria-labelledby="build-deployment-heading">
+          <h2 id="build-deployment-heading">Build &amp; Deployment</h2>
+          <ul>
+            <li>
+              <a
+                href="Build%20%26%20Deployment/code-splitting-with-react-lazy-and-suspense.html"
+                >Code Splitting with React.lazy and Suspense</a
+              >
+            </li>
+            <li>
+              <a
+                href="Build%20%26%20Deployment/bundle-optimization-tree-shaking-minification.html"
+                >Bundle Optimization – Tree Shaking & Minification</a
+              >
+            </li>
+            <li>
+              <a
+                href="Build%20%26%20Deployment/deployment-netlify-vercel-aws.html"
+                >Deployment – Netlify, Vercel & AWS</a
+              >
+            </li>
+            <li>
+              <a
+                href="Build%20%26%20Deployment/environment-variables-dev-prod-management.html"
+                >Environment Variables – Dev/Prod Management</a
+              >
+            </li>
+            <li>
+              <a
+                href="Build%20%26%20Deployment/cicd-pipelines-automated-testing-deployment.html"
+                >CI/CD Pipelines – Automated Testing & Deployment</a
+              >
+            </li>
+          </ul>
+        </section>
+      </section>
+
+      <footer>
+        <!-- Add any footer text here if needed -->
+      </footer>
+    </main>
+  </body>
+</html>

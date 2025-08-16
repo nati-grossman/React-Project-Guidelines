@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      טעינה חכמה – Code Splitting עם React.lazy ו־Suspense - React Project
+      Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>טעינה חכמה – Code Splitting עם React.lazy ו־Suspense</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה זה חשוב?</h2>
+        <ul>
+          <li>משפר זמני טעינה ראשוניים (First Load).</li>
+          <li>מוריד את גודל ה־bundle הראשוני.</li>
+          <li>מאפשר טעינה לפי דרישה של מסכים ופיצ׳רים.</li>
+        </ul>
+        <p>
+          במקום לטעון את כל הקוד upfront, מפצלים לחבילות (chunks) ונטען רק בעת
+          הצורך.
+        </p>
+      </section>
+
+      <section class="category">
+        <h2>React.lazy — טעינה דינמית של קומפוננטות</h2>
+        <p>טוען קומפוננטה רק כאשר משתמשים בה בפועל באמצעות import דינמי.</p>
+        <pre dir="ltr"><code>import React, { lazy, Suspense } from 'react';
+
+const UserPage = lazy(() =&gt; import('./pages/UserPage'));
+
+function App() {
+  return (
+    &lt;Suspense fallback={&lt;div&gt;Loading...&lt;/div&gt;}&gt;
+      &lt;UserPage /&gt;
+    &lt;/Suspense&gt;
+  );
+}
+// UserPage נטענת רק כשמגיעים אליה</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>Suspense — מה קורה בזמן הטעינה?</h2>
+        <p>עוטף את הרכיב ומציג UI חלופי (fallback) בזמן שהחבילה נטענת.</p>
+        <ul>
+          <li>יכול להיות טקסט, ספינר או Skeleton.</li>
+          <li>מומלץ להציב fallback ברמת המסכים/האזור.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>איפה זה שימושי?</h2>
+        <ul>
+          <li>Routing — טעינת עמודים לפי נתיב (React Router).</li>
+          <li>קומפוננטות כבדות (טבלאות, עורך עשיר, גרפים).</li>
+          <li>פיצ׳רים נדירים שלא צריך בטעינה הראשונית.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>טיפים לשימוש יעיל</h2>
+        <ul>
+          <li>
+            בנו עם Webpack/Vite שמבצעים Code Splitting אוטומטי ל־dynamic import.
+          </li>
+          <li>פצלו לפי מסכים/פיצ׳רים — לא רכיבי UI זעירים.</li>
+          <li>דאגו ל־fallback נעים ומינימלי בזמן הטעינה.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          Code Splitting עם <code>React.lazy</code> ו־<code>Suspense</code> הופך
+          את הטעינה לחכמה ומהירה: המשתמש מקבל חוויה זריזה, והאפליקציה נשארת
+          יעילה גם בפרויקטים גדולים.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

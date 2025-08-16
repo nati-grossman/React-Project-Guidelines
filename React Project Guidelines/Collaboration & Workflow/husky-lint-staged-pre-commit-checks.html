@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Husky + Lint-Staged – בדיקות לפני commit - React Project Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Husky + Lint-Staged – בדיקות לפני commit</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה Husky ו־Lint-Staged חשובים?</h2>
+        <p>
+          בפיתוח React ובפרויקטים גדולים, חשוב להבטיח שהקוד שנכנס ל־repository
+          איכותי ונקי. כלים כמו Husky ו־Lint-Staged מאפשרים לבצע בדיקות
+          אוטומטיות לפני כל commit, ולמנוע כניסה של קוד שבור או שאינו עומד
+          בסטנדרטים.
+        </p>
+        <ul>
+          <li>מונע commit של קוד עם שגיאות או סגנון לא עקבי.</li>
+          <li>מבטיח איכות קוד גבוהה לאורך זמן.</li>
+          <li>חוסך זמן ב־Code Review ובתיקון באגים.</li>
+          <li>מאפשר אכיפה אוטומטית של סטנדרטים כמו ESLint ו־Prettier.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>איך זה עובד</h2>
+        <h3>Husky</h3>
+        <p>
+          מנהל git hooks בצורה פשוטה ומאפשר להריץ פקודות לפני commit או push.
+        </p>
+        <p>התקנה והגדרה:</p>
+        <pre dir="ltr"><code>npm install --save-dev husky
+npx husky install</code></pre>
+        <p>הוספת pre-commit hook:</p>
+        <pre
+          dir="ltr"
+        ><code>npx husky add .husky/pre-commit "npx lint-staged"</code></pre>
+        <p>דוגמה להגדרה ב־package.json:</p>
+        <pre dir="ltr"><code>{
+  "scripts": {
+    "prepare": "husky install"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "pre-push": "npm test"
+    }
+  }
+}</code></pre>
+
+        <h3>Lint-Staged</h3>
+        <p>
+          מריץ פקודות רק על הקבצים ששונו ב־staging area. מאפשר לבצע lint, format
+          או בדיקות יחידה רק על הקוד שמתחייב ב־commit.
+        </p>
+        <p>התקנה:</p>
+        <pre dir="ltr"><code>npm install --save-dev lint-staged</code></pre>
+        <p>דוגמה להגדרה ב־package.json:</p>
+        <pre dir="ltr"><code>{
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{css,scss,md}": [
+      "prettier --write"
+    ]
+  }
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>דוגמה מלאה להגדרה</h2>
+        <p>package.json עם שילוב מלא:</p>
+        <pre dir="ltr"><code>{
+  "name": "my-react-app",
+  "scripts": {
+    "prepare": "husky install",
+    "lint": "eslint src --ext .ts,.tsx",
+    "format": "prettier --write src/**/*.{ts,tsx,css}"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "src/**/*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write",
+      "git add"
+    ],
+    "src/**/*.{css,scss}": [
+      "prettier --write",
+      "git add"
+    ]
+  },
+  "devDependencies": {
+    "husky": "^8.0.0",
+    "lint-staged": "^13.0.0",
+    "eslint": "^8.0.0",
+    "prettier": "^2.8.0"
+  }
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>טיפים למימוש יעיל</h2>
+        <ul>
+          <li>
+            להריץ את כל הכלים החשובים כמו ESLint, Prettier ובדיקות יחידה לפני
+            commit.
+          </li>
+          <li>להגביל את הבדיקות לקבצים ששונו בלבד כדי לחסוך בזמן.</li>
+          <li>לשלב עם CI/CD כדי לוודא גם ברמת build שהקוד עומד בסטנדרטים.</li>
+          <li>
+            להוסיף הודעות ברורות למשתמש במקרה של כשל כדי לדעת מה צריך לתקן.
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          שילוב Husky ו־Lint-Staged מבטיח שמירה על איכות הקוד כבר ברגע ה־commit.
+          הטמעה נכונה מפחיתה טעויות, משפרת עקביות הקוד ומייעלת את תהליכי הפיתוח
+          וה־Code Review בצוותי React גדולים.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

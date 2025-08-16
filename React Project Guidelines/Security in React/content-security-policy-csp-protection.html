@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Content Security Policy (CSP) – הגנה נוספת מפני התקפות צד לקוח - React
+      Project Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Content Security Policy (CSP) – הגנה נוספת מפני התקפות צד לקוח</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה CSP חשוב?</h2>
+        <p>
+          בפיתוח אפליקציות React, אפילו עם כל ההגנות של בדיקות קלט
+          ו‑sanitization, עדיין קיימת סכנה להרצת קוד זדוני בדפדפן המשתמש.
+          Content Security Policy (CSP) היא שכבת הגנה נוספת שמגבילה אילו משאבים
+          וקוד יכולים לרוץ בדפדפן.
+        </p>
+        <ul>
+          <li>מונע התקפות XSS והזרקות סקריפטים.</li>
+          <li>מגביל טעינת סקריפטים, CSS, תמונות ומשאבים רק ממקורות מהימנים.</li>
+          <li>
+            מפחית את הסיכון להרצת קוד צד שלישי לא מבוקר או ממקורות חשודים.
+          </li>
+          <li>תומך באבטחה קפדנית גם אם קיימת פגיעות בקוד האפליקציה.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>איך זה עובד</h2>
+        <h3>1. הגדרת מדיניות CSP בשרת</h3>
+        <p>
+          CSP מוגדר באמצעות HTTP headers (Content-Security-Policy) או meta tag
+          ב‑HTML.
+        </p>
+        <p>דוגמה בסיסית ב‑Express.js:</p>
+        <pre dir="ltr"><code>import helmet from 'helmet';
+import express from 'express';
+
+const app = express();
+
+// Basic CSP configuration
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"], // רק מהדומיין שלנו
+      scriptSrc: [
+        "'self'", 
+        "https://trusted.cdn.com",
+        "https://cdnjs.cloudflare.com",
+        "'unsafe-inline'" // רק במקרי חירום - לא מומלץ
+      ],
+      styleSrc: [
+        "'self'", 
+        "https://fonts.googleapis.com",
+        "'unsafe-inline'" // עבור styled-components במצב פיתוח
+      ],
+      imgSrc: [
+        "'self'", 
+        "data:", 
+        "https:",
+        "blob:"
+      ],
+      fontSrc: [
+        "'self'",
+        "https://fonts.gstatic.com"
+      ],
+      connectSrc: [
+        "'self'",
+        "https://api.myapp.com",
+        "wss://websocket.myapp.com"
+      ],
+      mediaSrc: ["'self'"],
+      objectSrc: ["'none'"], // מונע flash ו-plugins
+      frameSrc: ["'none'"], // מונע iframes
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      upgradeInsecureRequests: [],
+    },
+    reportOnly: false, // שנה ל-true לבדיקה ראשונית
+  })
+);
+
+// Advanced CSP with nonce support
+app.use((req, res, next) => {
+  // Generate a unique nonce for this request
+  res.locals.nonce = require('crypto').randomBytes(16).toString('base64');
+  next();
+});
+
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        (req, res) => `'nonce-${res.locals.nonce}'`
+      ],
+      styleSrc: [
+        "'self'",
+        (req, res) => `'nonce-${res.locals.nonce}'`
+      ],
+    },
+  })
+);</code></pre>
+
+        <h3>2. הגדרה במסגרת React</h3>
+        <p>Create React App:</p>
+        <pre dir="ltr"><code>// public/index.html
+&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+  &lt;head&gt;
+    &lt;meta charset="utf-8" /&gt;
+    &lt;meta
+      http-equiv="Content-Security-Policy"
+      content="
+        default-src 'self';
+        script-src 'self' 'unsafe-eval';
+        style-src 'self' 'unsafe-inline';
+        img-src 'self' data: https:;
+        font-src 'self' https://fonts.gstatic.com;
+        connect-src 'self' https://api.example.com;
+      "
+    /&gt;
+    &lt;title&gt;React App&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;div id="root"&gt;&lt;/div&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+        <p>Next.js:</p>
+        <pre dir="ltr"><code>// next.config.js
+const ContentSecurityPolicy = `
+  default-src 'self';
+  script-src 'self' 'unsafe-eval' 'unsafe-inline';
+  child-src *.youtube.com *.google.com;
+  style-src 'self' 'unsafe-inline' *.googleapis.com;
+  img-src * blob: data:;
+  media-src 'none';
+  connect-src *;
+  font-src 'self' *.gstatic.com;
+`;
+
+const securityHeaders = [
+  {
+    key: 'Content-Security-Policy',
+    value: ContentSecurityPolicy.replace(/\n/g, ''),
+  },
+];
+
+module.exports = {
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: securityHeaders,
+      },
+    ];
+  },
+};</code></pre>
+
+        <h3>3. שימוש במקורות מהימנים בלבד</h3>
+        <p>טעינת ספריות צד שלישי (CDN) חייבת להיות מבוקרת.</p>
+        <pre dir="ltr"><code>// ❌ רע - inline script
+&lt;script&gt;
+  console.log('This will be blocked by CSP');
+&lt;/script&gt;
+
+// ✅ טוב - external script ממקור מהימן
+&lt;script src="https://trusted.cdn.com/library.js"&gt;&lt;/script&gt;
+
+// ✅ טוב - script עם nonce
+&lt;script nonce="{{nonce}}"&gt;
+  console.log('This is allowed with nonce');
+&lt;/script&gt;</code></pre>
+
+        <h3>4. דיווח על הפרות (CSP Reporting)</h3>
+        <p>אפשר להגדיר endpoint שיקבל דוחות כאשר CSP נחצה:</p>
+        <pre dir="ltr"><code>// Server-side CSP violation reporting
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      reportUri: '/csp-violation-report-endpoint',
+    },
+  })
+);
+
+// CSP violation report endpoint
+app.post('/csp-violation-report-endpoint', express.json({ type: 'application/csp-report' }), (req, res) => {
+  console.log('CSP Violation Report:', JSON.stringify(req.body, null, 2));
+  
+  // Log to monitoring system (Sentry, LogRocket, etc.)
+  if (req.body && req.body['csp-report']) {
+    const report = req.body['csp-report'];
+    console.log({
+      blockedUri: report['blocked-uri'],
+      documentUri: report['document-uri'],
+      violatedDirective: report['violated-directive'],
+      originalPolicy: report['original-policy'],
+      sourceFile: report['source-file'],
+      lineNumber: report['line-number'],
+      columnNumber: report['column-number'],
+    });
+  }
+  
+  res.status(204).send();
+});
+
+// Modern CSP Reporting API
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      reportTo: 'csp-endpoint',
+    },
+  })
+);
+
+app.use((req, res, next) => {
+  res.setHeader('Report-To', JSON.stringify({
+    group: 'csp-endpoint',
+    max_age: 10886400,
+    endpoints: [{ url: '/csp-violation-report-endpoint' }],
+  }));
+  next();
+});</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>CSP עבור React Development</h2>
+        <pre dir="ltr"><code>// Development CSP (more permissive)
+const developmentCSP = {
+  defaultSrc: ["'self'"],
+  scriptSrc: [
+    "'self'",
+    "'unsafe-eval'", // נדרש עבור hot reloading
+    "'unsafe-inline'", // נדרש עבור inline scripts בפיתוח
+    "localhost:*",
+    "127.0.0.1:*",
+  ],
+  styleSrc: [
+    "'self'",
+    "'unsafe-inline'", // נדרש עבור styled-components ו-CSS-in-JS
+    "localhost:*",
+  ],
+  imgSrc: ["'self'", "data:", "blob:", "localhost:*"],
+  connectSrc: [
+    "'self'",
+    "ws://localhost:*", // עבור hot reloading WebSocket
+    "wss://localhost:*",
+    "localhost:*",
+  ],
+};
+
+// Production CSP (restrictive)
+const productionCSP = {
+  defaultSrc: ["'self'"],
+  scriptSrc: [
+    "'self'",
+    "https://trusted-cdn.com",
+    // אם משתמשים ב-nonce
+    (req, res) => `'nonce-${res.locals.nonce}'`,
+  ],
+  styleSrc: [
+    "'self'",
+    "https://fonts.googleapis.com",
+    // עבור styled-components בפרודקשן
+    "'sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU='",
+  ],
+  imgSrc: ["'self'", "https:", "data:"],
+  fontSrc: ["'self'", "https://fonts.gstatic.com"],
+  connectSrc: ["'self'", "https://api.myapp.com"],
+  objectSrc: ["'none'"],
+  mediaSrc: ["'self'"],
+  frameSrc: ["'none'"],
+  baseUri: ["'self'"],
+  formAction: ["'self'"],
+  upgradeInsecureRequests: [],
+};
+
+// Environment-based CSP
+const cspConfig = process.env.NODE_ENV === 'production' 
+  ? productionCSP 
+  : developmentCSP;
+
+app.use(helmet.contentSecurityPolicy({ directives: cspConfig }));</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>React Component עם CSP Nonce</h2>
+        <pre dir="ltr"><code>// Hook לניהול nonce
+import { useContext, createContext } from 'react';
+
+const NonceContext = createContext('');
+
+export const NonceProvider = ({ nonce, children }) => (
+  &lt;NonceContext.Provider value={nonce}&gt;
+    {children}
+  &lt;/NonceContext.Provider&gt;
+);
+
+export const useNonce = () => useContext(NonceContext);
+
+// שימוש ב-component
+function DynamicScript({ code }) {
+  const nonce = useNonce();
+  
+  return (
+    &lt;script 
+      nonce={nonce}
+      dangerouslySetInnerHTML={{ __html: code }}
+    /&gt;
+  );
+}
+
+// Server-side rendering עם nonce
+function App() {
+  const nonce = res.locals.nonce; // מהשרת
+  
+  return (
+    &lt;NonceProvider nonce={nonce}&gt;
+      &lt;div&gt;
+        &lt;DynamicScript code="console.log('Safe script');" /&gt;
+      &lt;/div&gt;
+    &lt;/NonceProvider&gt;
+  );
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>CSP Testing ו-Debugging</h2>
+        <pre dir="ltr"><code>// CSP Validator utility
+class CSPValidator {
+  static validateInlineScript(content, csp) {
+    const hasUnsafeInline = csp.scriptSrc.includes("'unsafe-inline'");
+    const hasNonce = csp.scriptSrc.some(src => src.startsWith("'nonce-"));
+    const hasHash = csp.scriptSrc.some(src => src.startsWith("'sha"));
+    
+    if (!hasUnsafeInline && !hasNonce && !hasHash) {
+      console.warn('Inline script blocked by CSP:', content);
+      return false;
+    }
+    
+    return true;
+  }
+  
+  static checkExternalResource(url, directive) {
+    const allowedSources = directive || ["'self'"];
+    const isAllowed = allowedSources.some(source => {
+      if (source === "'self'") return url.startsWith(window.location.origin);
+      if (source === "https:") return url.startsWith('https:');
+      if (source === "*") return true;
+      return url.startsWith(source);
+    });
+    
+    if (!isAllowed) {
+      console.warn(`Resource blocked by CSP: ${url}`);
+    }
+    
+    return isAllowed;
+  }
+}
+
+// Development helper
+if (process.env.NODE_ENV === 'development') {
+  // Monitor CSP violations in console
+  document.addEventListener('securitypolicyviolation', (e) => {
+    console.group('🛡️ CSP Violation');
+    console.log('Blocked URI:', e.blockedURI);
+    console.log('Violated Directive:', e.violatedDirective);
+    console.log('Original Policy:', e.originalPolicy);
+    console.log('Source File:', e.sourceFile);
+    console.log('Line Number:', e.lineNumber);
+    console.groupEnd();
+  });
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>טיפים למימוש יעיל</h2>
+        <ul>
+          <li>
+            להתחיל עם CSP רכה (report-only) כדי לבדוק את ההשפעה על האפליקציה
+            לפני הפעלה מלאה.
+          </li>
+          <li>להימנע משימוש ב‑unsafe-inline או unsafe-eval ככל האפשר.</li>
+          <li>
+            לשלב CSP עם שיטות אחרות כמו input validation ו‑sanitization לקבלת
+            הגנה מקצה לקצה.
+          </li>
+          <li>
+            לעדכן את המדיניות בכל שינוי במקורות החיצוניים או ספריות צד שלישי.
+          </li>
+          <li>להשתמש ב-nonces או hashes עבור inline scripts שהם הכרחיים.</li>
+          <li>
+            לבדוק את הCSP באמצעות כלים כמו CSP Evaluator או Security Headers.
+          </li>
+          <li>לנטר הפרות CSP באמצעות reporting endpoints ומערכות ניטור.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          Content Security Policy היא שכבת אבטחה קריטית למניעת התקפות צד לקוח
+          באפליקציות React. שילוב CSP עם בדיקות קלט, sanitization ושימוש נכון
+          ב‑HTTPS מבטיח אפליקציה חזקה, בטוחה ומוגנת מפני קוד זדוני.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

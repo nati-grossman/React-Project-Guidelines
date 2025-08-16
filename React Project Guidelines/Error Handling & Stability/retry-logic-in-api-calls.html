@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Retry Logic ב־API Calls - React Project Guidelines</title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Retry Logic ב־API Calls</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>מה זה Retry Logic?</h2>
+        <p>
+          ב־React ובכל אפליקציה מבוססת Web, קריאות ל־API עלולות להיכשל מסיבות
+          שונות – בעיות רשת, timeout או שגיאות זמניות בשרת.
+        </p>
+        <p>
+          כדי לשפר את יציבות האפליקציה וחוויית המשתמש, משתמשים ב־Retry Logic –
+          מנגנון שמבצע ניסיון חוזר לקריאה שנכשל.
+        </p>
+      </section>
+
+      <section class="category">
+        <h2>למה זה חשוב?</h2>
+        <ul>
+          <li>מונע מכשלים זמניים לפגוע בחוויית המשתמש.</li>
+          <li>משפר יציבות תחת רשת לא יציבה.</li>
+          <li>פחות הודעות שגיאה — יותר אמינות.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>מימוש בסיסי עם fetch</h2>
+        <pre
+          dir="ltr"
+        ><code>async function fetchWithRetry(url, retries = 3, delay = 1000) {
+  for (let i = 0; i &lt; retries; i++) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Network response was not ok');
+      return await response.json();
+    } catch (error) {
+      if (i === retries - 1) throw error;
+      await new Promise((res) =&gt; setTimeout(res, delay));
+    }
+  }
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>React Query – Retry מובנה</h2>
+        <pre
+          dir="ltr"
+        ><code>const { data, error, isLoading } = useQuery(['data'], fetchData, {
+  retry: 3,         // מספר ניסיונות
+  retryDelay: 1000, // השהייה בין ניסיונות
+});</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>טיפים למימוש יעיל</h2>
+        <ul>
+          <li>הגבילו את מספר הניסיונות כדי למנוע עומס.</li>
+          <li>השתמשו ב־Exponential Backoff להפחתת עומס רשת.</li>
+          <li>סננו לפי סוג שגיאה — אל תחזרו על שגיאות 4xx צפויות.</li>
+          <li>שלבו UI מתאים (ספינר/הודעה) בזמן ניסיון חוזר.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          Retry Logic הוא כלי קריטי ליציבות קריאות API. יישום נכון שומר על
+          חוויית משתמש רציפה ומפחית כשלים זמניים מבלי להכביד על הקוד.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

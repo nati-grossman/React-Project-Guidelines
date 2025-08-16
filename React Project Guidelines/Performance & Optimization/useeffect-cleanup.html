@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      useEffect Cleanup – מניעת זליגת משאבים - React Project Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>useEffect Cleanup – מניעת זליגת משאבים</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה זה חשוב?</h2>
+        <ul>
+          <li>מניעת זליגות זיכרון ומשאבים.</li>
+          <li>מניעת קריאות כפולות ל־API או מאזינים מיותרים.</li>
+          <li>שמירה על יציבות האפליקציה וה־UI.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>איך עושים Cleanup?</h2>
+        <p>
+          ה־effect מחזיר פונקציית cleanup שנקראת לפני הרינדור הבא או כאשר הרכיב
+          מוסר.
+        </p>
+        <h3>דוגמה – מנוי לאירוע</h3>
+        <pre dir="ltr"><code>useEffect(() =&gt; {
+  const handleResize = () =&gt; console.log(window.innerWidth);
+  window.addEventListener('resize', handleResize);
+
+  // Cleanup
+  return () =&gt; {
+    window.removeEventListener('resize', handleResize);
+  };
+}, []);</code></pre>
+        <h3>דוגמה – טיימר</h3>
+        <pre dir="ltr"><code>useEffect(() =&gt; {
+  const interval = setInterval(() =&gt; console.log('tick'), 1000);
+
+  // Cleanup
+  return () =&gt; clearInterval(interval);
+}, []);</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>טיפים חשובים</h2>
+        <ul>
+          <li>תמיד החזירו את המערכת למצב ההתחלתי (בטלו מנויים/משאבים).</li>
+          <li>
+            שימו לב לתלויות ה־effect — cleanup ירוץ לפני רינדור הבא אם תלויות
+            משתנות.
+          </li>
+          <li>
+            במשאבים מתמשכים (WebSocket/EventSource) ודאו סגירה בזמן unmount.
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          useEffect Cleanup הוא כמו לנקות אחרי העבודה — בלי זה האפליקציה
+          "מתלכלכת" בזיכרון ומשאבים. עם cleanup נכון תשמרו על ביצועים ויציבות
+          לאורך זמן.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

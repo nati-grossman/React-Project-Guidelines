@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Continuous Testing – הרצת בדיקות אוטומטית ב‑CI/CD - React Project
+      Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Continuous Testing – הרצת בדיקות אוטומטית ב‑CI/CD</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה Continuous Testing חשוב?</h2>
+        <p>
+          בפיתוח מודרני, במיוחד בפרויקטים גדולים עם React, Continuous Testing
+          הוא חלק קריטי מתהליך ה‑CI/CD. המטרה היא להריץ בדיקות באופן אוטומטי בכל
+          שינוי קוד, כדי לוודא שהאפליקציה נשארת יציבה ומוכנה לפריסה.
+        </p>
+        <ul>
+          <li>מונע הכנסת באגים ל־main branch או ל־production.</li>
+          <li>מאפשר feedback מיידי למפתחים על בעיות בקוד.</li>
+          <li>משפר איכות הקוד לאורך זמן ומקצר את זמן הפיתוח.</li>
+          <li>תומך בפרויקטים עם מספר מפתחים וצוותים מרובי סניפים.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>איך זה עובד</h2>
+        <h3>1. שילוב בדיקות ב‑CI/CD</h3>
+        <ul>
+          <li>כל commit או pull request מפעיל pipeline שבודק את הקוד.</li>
+          <li>
+            הבדיקות כוללות Unit, Integration, E2E ובדיקות סגנון
+            (ESLint/Prettier).
+          </li>
+        </ul>
+
+        <h3>2. כלים נפוצים</h3>
+        <p>
+          GitHub Actions, GitLab CI, CircleCI, Jenkins – להרצת בדיקות אוטומטית.
+        </p>
+        <p>ניתן להגדיר pipeline לדוגמה ב‑GitHub Actions:</p>
+        <pre dir="ltr"><code>name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18, 20]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run linting
+        run: npm run lint
+      
+      - name: Run type checking
+        run: npm run type-check
+      
+      - name: Run unit tests
+        run: npm test -- --coverage --watchAll=false
+      
+      - name: Run integration tests
+        run: npm run test:integration
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        
+  e2e:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright
+        run: npx playwright install --with-deps
+      
+      - name: Build application
+        run: npm run build
+      
+      - name: Run E2E tests
+        run: npm run test:e2e
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/</code></pre>
+
+        <h3>3. שילוב עם Mocking</h3>
+        <p>
+          שימוש ב‑MSW או mocks מאפשר הרצת בדיקות מהירה ואמינה ללא תלות בשרת
+          אמיתי.
+        </p>
+        <pre dir="ltr"><code>// jest.config.js
+module.exports = {
+  setupFilesAfterEnv: ['&lt;rootDir&gt;/src/setupTests.ts'],
+  testEnvironment: 'jsdom',
+  moduleNameMapping: {
+    '^@/(.*)$': '&lt;rootDir&gt;/src/$1',
+  },
+  collectCoverageFrom: [
+    'src/**/*.{ts,tsx}',
+    '!src/**/*.d.ts',
+    '!src/index.tsx',
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
+  },
+};</code></pre>
+
+        <h3>4. דוחות ושקיפות</h3>
+        <p>ניתן לייצר דוחות Test Coverage, לוגים של ביצועים ותוצאות בדיקות.</p>
+        <pre dir="ltr"><code>// package.json scripts
+{
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:integration": "jest --testPathPattern=integration",
+    "test:e2e": "playwright test",
+    "test:ci": "jest --coverage --watchAll=false --reporters=default --reporters=jest-junit",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "type-check": "tsc --noEmit"
+  }
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>דוגמה ל־GitLab CI</h2>
+        <pre dir="ltr"><code># .gitlab-ci.yml
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  NODE_VERSION: "20"
+
+cache:
+  paths:
+    - node_modules/
+
+test:
+  stage: test
+  image: node:$NODE_VERSION
+  script:
+    - npm ci
+    - npm run lint
+    - npm run type-check
+    - npm test -- --coverage --watchAll=false
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+    paths:
+      - coverage/
+  coverage: '/Lines\s*:\s*(\d+\.\d+)%/'
+
+e2e-tests:
+  stage: test
+  image: mcr.microsoft.com/playwright:v1.40.0-focal
+  script:
+    - npm ci
+    - npm run build
+    - npm run test:e2e
+  artifacts:
+    when: always
+    paths:
+      - playwright-report/
+    expire_in: 30 days</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>טיפים למימוש יעיל</h2>
+        <ul>
+          <li>
+            להריץ את הבדיקות הקריטיות בכל commit, ולהרחיב ל־full suite לפי
+            schedule.
+          </li>
+          <li>לשלב בדיקות lint, format ובדיקות יחידה לפני Merge.</li>
+          <li>להבטיח שהבדיקות רצות במהירות כדי לא לעכב את ה‑pipeline.</li>
+          <li>להפיק דוחות ברורים כדי שאפשר יהיה לזהות בעיות במהירות.</li>
+          <li>להשתמש ב־parallel jobs כדי לזרז את הבדיקות.</li>
+          <li>להגדיר coverage threshold כדי לשמור על איכות הבדיקות.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          Continuous Testing ב‑CI/CD מבטיח שהקוד נשאר איכותי, יציב ובטוח לפריסה
+          בכל שלב. שילוב אוטומציה של בדיקות עם Mocking ו‑Linting מאפשר למפתחים
+          להתמקד בפיתוח בלי לחשוש לשבור את האפליקציה, במיוחד בפרויקטים גדולים
+          ומורכבים של React.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

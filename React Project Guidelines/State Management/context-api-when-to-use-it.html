@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Context API – מתי כן ומתי לא - React Project Guidelines</title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Context API – מתי כן ומתי לא</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>מה זה Context API?</h2>
+        <p>
+          מנגנון לשיתוף נתונים ופונקציות בין קומפוננטות בלי להעביר props דרך כל
+          העץ. יוצרים "קונטקסט" ומספקים אותו לכל רכיב שצריך גישה אליו.
+        </p>
+      </section>
+
+      <section class="category">
+        <h2>מתי כן להשתמש</h2>
+        <ul>
+          <li>
+            <strong>State גלובלי קטן</strong>: נתונים שנדרשים בכמה מקומות, כמו
+            מצב התחברות (user/token), שפה (locale), או Theme (Dark/Light).
+          </li>
+          <li>
+            <strong>הימנעות מ־Props Drilling</strong>: כשמידע צריך לעבור הרבה
+            רמות בעץ.
+          </li>
+          <li>
+            <strong>שילוב עם Component Composition</strong>: רכיבי UI מקבלים
+            גישה לנתונים גלובליים בלי תלות בהיררכיה שלהם.
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>מתי לא להשתמש</h2>
+        <ul>
+          <li>
+            <strong>עדכונים תכופים</strong>: state שמשתנה כל הזמן (timer, mouse
+            position, scroll) עלול לגרום לרינדורים רבים אצל כל הצורכים.
+          </li>
+          <li>
+            <strong>נתונים ספציפיים לפיצ׳ר</strong>: השאירו מקומי ב־useState או
+            ב־Custom Hook.
+          </li>
+          <li>
+            <strong>ניהול State מורכב</strong>: Context לא מחליף Redux/Zustand
+            כאשר יש לוגיקה עסקית רבה או סנכרון נתונים מורכב.
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>טיפים לשימוש נכון</h2>
+        <ul>
+          <li>
+            <strong>הפרידו לוגיקה מ־UI</strong>: עטפו לוגיקה ב־Custom Hook
+            והשתמשו בו בתוך ה־Provider.
+          </li>
+          <li>
+            <strong>פצלו Contextים</strong>: צרו קונטקסטים נפרדים לפי סוג מידע
+            (AuthContext, ThemeContext) כדי לצמצם רינדורים.
+          </li>
+        </ul>
+        <h3>דוגמה קצרה: Provider ו־Consumer</h3>
+        <pre dir="ltr"><code>// auth-context.tsx
+const AuthContext = React.createContext&lt;{ user: User | null }&gt;({ user: null });
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuthLogic(); // Custom Hook שמטפל בלוגיקה
+  return &lt;AuthContext.Provider value={{ user }}&gt;{children}&lt;/AuthContext.Provider&gt;;
+}
+
+export function useAuth() {
+  return React.useContext(AuthContext);
+}</code></pre>
+        <pre dir="ltr"><code>// Component.tsx
+function HeaderUser() {
+  const { user } = useAuth();
+  return &lt;span&gt;{user ? user.name : 'Guest'}&lt;/span&gt;;
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <ul>
+          <li><strong>כן</strong>: מידע גלובלי ויציב, שימוש בכמה מקומות.</li>
+          <li><strong>לא</strong>: עדכונים תכופים או נתונים מקומיים לפיצ׳ר.</li>
+          <li>
+            <strong>כלי משלים</strong>: Context אינו תחליף מלא לניהול State
+            מורכב.
+          </li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

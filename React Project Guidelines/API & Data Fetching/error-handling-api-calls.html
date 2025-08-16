@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Error Handling ב‑API Calls – טיפול בטעויות בצורה מסודרת - React Project
+      Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Error Handling ב‑API Calls – טיפול בטעויות בצורה מסודרת</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה Error Handling חשוב?</h2>
+        <p>
+          בפיתוח React, קריאות ל־API הן חלק בלתי נפרד מהאפליקציה. טיפול שגוי או
+          חוסר טיפול בטעויות עלול לגרום לקריסות UI, חוויית משתמש לקויה ואפילו
+          אובדן נתונים. לכן, Error Handling מסודר הוא חיוני לפיתוח מקצועי ואמין.
+        </p>
+        <ul>
+          <li>מאפשר לאפליקציה להמשיך לפעול גם כשקריאות ל־API נכשלות.</li>
+          <li>מספק feedback ברור למשתמש במקרים של בעיות ברשת או בשירות.</li>
+          <li>מאפשר פיתוח תחזוקתי, קריא ומנוהל של הקוד.</li>
+          <li>משפר את האמינות והיציבות של האפליקציה.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>איך זה עובד</h2>
+        <h3>1. שימוש ב‑try/catch עם async/await</h3>
+        <p>הדרך הפשוטה ביותר לטיפול בשגיאות אסינכרוניות:</p>
+        <pre dir="ltr"><code>async function fetchUsers() {
+  try {
+    const response = await fetch('/api/users');
+    
+    // Check if response is ok
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    // Log for developers
+    console.error('Fetch error:', error);
+    
+    // Handle different error types
+    if (error.name === 'TypeError') {
+      throw new Error('Network error. Please check your connection.');
+    } else if (error.message.includes('404')) {
+      throw new Error('Resource not found.');
+    } else {
+      throw new Error('Failed to fetch data. Please try again.');
+    }
+  }
+}</code></pre>
+
+        <h3>2. Axios עם catch</h3>
+        <p>
+          Axios מטפל בשגיאות בצורה נוחה ומספק מידע על status, headers
+          ו־response:
+        </p>
+        <pre dir="ltr"><code>import axios from 'axios';
+
+async function fetchUsers() {
+  try {
+    const { data } = await axios.get('/api/users');
+    return data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      // Network or HTTP error
+      const status = error.response?.status;
+      const message = error.response?.data?.message || error.message;
+      
+      console.error('Axios error:', {
+        status,
+        message,
+        url: error.config?.url,
+      });
+      
+      // Handle specific status codes
+      switch (status) {
+        case 400:
+          throw new Error('Invalid request. Please check your data.');
+        case 401:
+          throw new Error('Unauthorized. Please log in again.');
+        case 403:
+          throw new Error('Access forbidden.');
+        case 404:
+          throw new Error('Resource not found.');
+        case 500:
+          throw new Error('Server error. Please try again later.');
+        default:
+          throw new Error(message || 'An unexpected error occurred.');
+      }
+    } else {
+      // Non-Axios error
+      console.error('Unexpected error:', error);
+      throw new Error('An unexpected error occurred.');
+    }
+  }
+}</code></pre>
+
+        <h3>3. טיפול ב‑UI</h3>
+        <p>ניתן להציג הודעות ברורות למשתמש:</p>
+        <pre dir="ltr"><code>import React, { useState, useEffect } from 'react';
+
+function UsersList() {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await fetchUsers();
+        setUsers(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUsers();
+  }, []);
+
+  const handleRetry = () => {
+    setError(null);
+    // Trigger reload by updating a dependency or calling loadUsers again
+  };
+
+  if (loading) {
+    return &lt;div className="loading"&gt;Loading users...&lt;/div&gt;;
+  }
+
+  if (error) {
+    return (
+      &lt;div className="error-container"&gt;
+        &lt;div className="error-message"&gt;{error}&lt;/div&gt;
+        &lt;button onClick={handleRetry} className="retry-button"&gt;
+          Try Again
+        &lt;/button&gt;
+      &lt;/div&gt;
+    );
+  }
+
+  return (
+    &lt;ul&gt;
+      {users.map(user =&gt; (
+        &lt;li key={user.id}&gt;{user.name}&lt;/li&gt;
+      ))}
+    &lt;/ul&gt;
+  );
+}</code></pre>
+
+        <h3>4. Retry & Fallback</h3>
+        <p>שילוב retry logic, timeout או default data משפר את חוויית המשתמש:</p>
+        <pre dir="ltr"><code>// Manual retry with exponential backoff
+async function fetchWithRetry(url, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      
+      // Exponential backoff: 1s, 2s, 4s
+      const delay = Math.pow(2, attempt - 1) * 1000;
+      console.warn(`Attempt ${attempt} failed, retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+}
+
+// Using React Query for automatic retry
+import { useQuery } from '@tanstack/react-query';
+
+function UsersComponent() {
+  const { 
+    data: users, 
+    error, 
+    isLoading, 
+    refetch 
+  } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => fetchUsers(),
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  if (isLoading) return &lt;div&gt;Loading...&lt;/div&gt;;
+  
+  if (error) {
+    return (
+      &lt;div&gt;
+        &lt;p&gt;Error: {error.message}&lt;/p&gt;
+        &lt;button onClick={() => refetch()}&gt;Retry&lt;/button&gt;
+      &lt;/div&gt;
+    );
+  }
+
+  return (
+    &lt;ul&gt;
+      {users?.map(user =&gt; (
+        &lt;li key={user.id}&gt;{user.name}&lt;/li&gt;
+      ))}
+    &lt;/ul&gt;
+  );
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>Global Error Handler</h2>
+        <pre dir="ltr"><code>// Create a global error handler
+class ApiError extends Error {
+  constructor(message, status, code) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+  }
+}
+
+// Enhanced API client with global error handling
+const apiClient = axios.create({
+  baseURL: '/api',
+  timeout: 10000,
+});
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const { response } = error;
+    
+    if (response) {
+      // Server responded with error status
+      const { status, data } = response;
+      const message = data?.message || 'An error occurred';
+      
+      // Log error for monitoring
+      console.error('API Error:', { status, message, url: error.config?.url });
+      
+      // Throw custom error
+      throw new ApiError(message, status, data?.code);
+    } else if (error.request) {
+      // Network error
+      console.error('Network Error:', error.message);
+      throw new ApiError('Network error. Please check your connection.', 0, 'NETWORK_ERROR');
+    } else {
+      // Something else happened
+      console.error('Request Error:', error.message);
+      throw new ApiError('An unexpected error occurred.', 0, 'UNKNOWN_ERROR');
+    }
+  }
+);
+
+// Usage
+async function fetchUsers() {
+  try {
+    const { data } = await apiClient.get('/users');
+    return data;
+  } catch (error) {
+    if (error instanceof ApiError) {
+      // Handle known API errors
+      if (error.status === 401) {
+        // Redirect to login
+        window.location.href = '/login';
+        return;
+      }
+    }
+    
+    // Re-throw for component to handle
+    throw error;
+  }
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>טיפים למימוש יעיל</h2>
+        <ul>
+          <li>להפריד בין טיפול בטעויות ברשת לטיפול בטעויות לוגיות מהשרת.</li>
+          <li>להציג למשתמש מידע ברור ולוגים מפורטים למפתחים.</li>
+          <li>לשלב retry, fallback או cache כדי לשפר חוויית משתמש.</li>
+          <li>להשתמש בכלים כמו Sentry או LogRocket לניטור שגיאות בזמן אמת.</li>
+          <li>ליצור Error Boundaries לטיפול בשגיאות ברמת הקומפוננטה.</li>
+          <li>להגדיר timeout מתאים לקריאות API כדי למנוע המתנה אינסופית.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          Error Handling מסודר ב‑API Calls מאפשר אפליקציות React יציבות, אמינות
+          ומקצועיות. שילוב try/catch, Axios או React Query עם UI ברור, retry
+          ו‑fallback מבטיח חוויית משתמש טובה יותר ומונע קריסות לא צפויות.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

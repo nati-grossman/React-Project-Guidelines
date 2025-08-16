@@ -1,0 +1,125 @@
+:root {
+  --bg: #f6f7fb;
+  --card-bg: #ffffff;
+  --primary: #1f6feb;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+    sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+header h1 {
+  margin: 0 0 24px;
+  font-size: 2rem;
+  letter-spacing: 0.2px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 720px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.category {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+
+.category h2 {
+  display: flex;
+  align-items: center;
+  margin: 0 0 12px;
+  font-size: 1.25rem;
+}
+
+.category h2::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 20px;
+  background: linear-gradient(180deg, var(--primary), #60a5fa);
+  border-radius: 4px;
+  margin-right: 10px;
+}
+
+ul {
+  margin: 0;
+  padding-left: 22px;
+}
+
+li + li {
+  margin-top: 8px;
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+a:hover,
+a:focus {
+  text-decoration: underline;
+}
+
+footer {
+  margin-top: 28px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* Code blocks: improve readability and enforce LTR for diagrams/paths */
+pre,
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono",
+    monospace;
+}
+
+pre {
+  background: #f3f4f6;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  overflow: auto;
+  line-height: 1.55;
+  font-size: 0.95rem;
+  direction: ltr; /* keep ASCII trees, file paths and code left-to-right */
+  unicode-bidi: embed;
+  text-align: left;
+}
+
+pre code {
+  background: transparent;
+  padding: 0;
+}

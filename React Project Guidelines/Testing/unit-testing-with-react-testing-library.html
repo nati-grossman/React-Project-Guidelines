@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Unit Testing עם React Testing Library - React Project Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Unit Testing עם React Testing Library</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה Unit Testing חשוב?</h2>
+        <p>
+          בפיתוח React, Unit Testing הוא חלק קריטי להבטחת איכות הקוד ולמניעת
+          באגים. React Testing Library היא ספרייה פופולרית שמאפשרת לבדוק
+          קומפוננטות React בצורה שמדמה שימוש אמיתי של המשתמש, ולא רק את המימוש
+          הפנימי.
+        </p>
+        <ul>
+          <li>מוודא שהקומפוננטות עובדות כמצופה בכל מצב.</li>
+          <li>מקטין סיכוי לקריסות בעת שינוי קוד או refactoring.</li>
+          <li>
+            מאפשר כתיבת קוד תחזוקתי יותר – בטוח לשינוי בלי לחשוש לשבור דברים.
+          </li>
+          <li>משפר את אמון הצוות בקוד ובפרויקט.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>עקרונות ל־Unit Testing עם React Testing Library</h2>
+        <h3>1. Testing the User Experience</h3>
+        <p>
+          בדיקה שמתרחשת מנקודת מבט של המשתמש: מה מוצג על המסך, איך מתנהגות
+          לחצנים, קלטים וטפסים.
+        </p>
+        <p>לדוגמה:</p>
+        <pre
+          dir="ltr"
+        ><code>import { render, screen, fireEvent } from '@testing-library/react';
+import Button from './Button';
+
+test('calls onClick when clicked', () => {
+  const handleClick = jest.fn();
+  render(&lt;Button onClick={handleClick}&gt;Click me&lt;/Button&gt;);
+  fireEvent.click(screen.getByText(/click me/i));
+  expect(handleClick).toHaveBeenCalledTimes(1);
+});</code></pre>
+
+        <h3>2. Avoid Testing Implementation Details</h3>
+        <ul>
+          <li>אין צורך לבדוק state פנימי או פונקציות פרטיות.</li>
+          <li>חשוב להתמקד בתוצאה שהמשתמש רואה או מפעיל.</li>
+        </ul>
+
+        <h3>3. Use Queries Effectively</h3>
+        <ul>
+          <li>
+            <code>getByText</code>, <code>getByRole</code>,
+            <code>getByLabelText</code> – כדי לבחור אלמנטים בצורה קריאה וברורה.
+          </li>
+          <li>שימוש ב־<code>screen</code> מאפשר קוד ברור וממוקד.</li>
+        </ul>
+
+        <h3>4. Test Edge Cases</h3>
+        <ul>
+          <li>בדוק מצב ריק, טעינה, שגיאות API או props חסרים.</li>
+          <li>ודא שהקומפוננטה מתנהגת בצורה נכונה גם בתנאים קיצוניים.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>דוגמה מתקדמת</h2>
+        <pre
+          dir="ltr"
+        ><code>import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import LoginForm from './LoginForm';
+
+test('submits form with correct data', async () => {
+  const user = userEvent.setup();
+  const onSubmit = jest.fn();
+  
+  render(&lt;LoginForm onSubmit={onSubmit} /&gt;);
+  
+  await user.type(screen.getByLabelText(/email/i), 'test@example.com');
+  await user.type(screen.getByLabelText(/password/i), 'password123');
+  await user.click(screen.getByRole('button', { name: /login/i }));
+  
+  await waitFor(() => {
+    expect(onSubmit).toHaveBeenCalledWith({
+      email: 'test@example.com',
+      password: 'password123'
+    });
+  });
+});</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>טיפים למימוש יעיל</h2>
+        <ul>
+          <li>לשלב Jest יחד עם React Testing Library כדי להריץ את הבדיקות.</li>
+          <li>להריץ בדיקות כחלק מ־CI/CD כדי למנוע regressions.</li>
+          <li>שמור על בדיקות קצרות, ברורות וממוקדות.</li>
+          <li>השתמש ב־mocks ו־stubs כדי לבודד קומפוננטות או API חיצוני.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          Unit Testing עם React Testing Library מאפשר בדיקה אמינה של קומפוננטות
+          מנקודת מבט של המשתמש. שילוב עם Jest ושמירה על best practices מבטיח קוד
+          יציב, תחזוקתי וקל לשינויים לאורך זמן.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

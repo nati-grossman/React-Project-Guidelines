@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Separation of Logic and UI – הפרדת לוגיקה מהממשק - React Project
+      Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Separation of Logic and UI – הפרדת לוגיקה מהממשק</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה להפריד לוגיקה מהממשק?</h2>
+        <p>ערבוב לוגיקה ו־UI באותה קומפוננטה יוצר קוד מסובך וקשה לבדיקה.</p>
+        <ul>
+          <li><strong>Hooks</strong> מנהלים state, נתונים ו־side‑effects.</li>
+          <li><strong>Components</strong> מציגים UI בלבד.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>Custom Hooks – אחראים על הלוגיקה</h2>
+        <p>
+          ה־Hook מנהל state, קריאות API, חישובים ו־side-effects ואינו תלוי ב־UI.
+        </p>
+        <pre dir="ltr"><code>// useUsers.ts
+import { useState, useEffect } from 'react';
+import { fetchUsers } from '../services/userService';
+
+export const useUsers = () =&gt; {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() =&gt; {
+    fetchUsers().then(data =&gt; {
+      setUsers(data);
+      setLoading(false);
+    });
+  }, []);
+
+  return { users, loading };
+};</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>Presentational Components – אחראים על הממשק</h2>
+        <p>רכיבי תצוגה מקבלים נתונים ופונקציות כ־props ומציגים UI בלבד.</p>
+        <ul>
+          <li>אין בהם <em>state</em> עסקי, חישובים או קריאות API.</li>
+          <li>קל לבדוק אותם כי הם פונקציה של props → UI.</li>
+          <li>מומלץ למקם אותם תחת <code>features/*/components</code>.</li>
+        </ul>
+        <pre dir="ltr"><code>// UserList.tsx
+import { UserCard } from './UserCard';
+
+export const UserList = ({ users, loading }: { users: any[]; loading: boolean }) =&gt; {
+  if (loading) return &lt;p&gt;Loading...&lt;/p&gt;;
+
+  return (
+    &lt;div&gt;
+      {users.map(user =&gt; (
+        &lt;UserCard key={user.id} user={user} /&gt;
+      ))}
+    &lt;/div&gt;
+  );
+};</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>שילוב Hook עם Presentational Component</h2>
+        <p>הדף/Container קורא ל־Hook, ומעביר את התוצאות לרכיבי התצוגה.</p>
+        <pre dir="ltr"><code>// UsersPage.tsx (Container)
+import { useUsers } from '../hooks/useUsers';
+import { UserList } from '../components/UserList';
+
+export const UsersPage = () =&gt; {
+  const { users, loading } = useUsers();
+  return &lt;UserList users={users} loading={loading} /&gt;;
+};</code></pre>
+        <p>כך הלוגיקה מרוכזת ב־Hook, וה־UI נשאר דק ופשוט.</p>
+      </section>
+
+      <section class="category">
+        <h2>יתרונות הגישה</h2>
+        <ul>
+          <li><strong>קוד קריא ומודולרי</strong>: לוגיקה לחוד, UI לחוד.</li>
+          <li>
+            <strong>Reusable</strong>: שימוש חוזר ב־Hooks/רכיבים במקומות שונים.
+          </li>
+          <li><strong>בדיקות פשוטות</strong>: Hooks נבדקים בנפרד מה־UI.</li>
+          <li><strong>Scalability</strong>: שומרים על סדר גם כשהמערכת גדלה.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          <strong>Hooks</strong> — מנהלים את הלוגיקה וה־state. <br />
+          <strong>Components</strong> — מציגים את המידע ומנהלים את ה־UI.
+          <br />כך נשמר קוד נקי, מודולרי וקל לתחזוקה.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

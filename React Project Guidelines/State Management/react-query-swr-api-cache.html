@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      React Query / SWR – ניהול API ו־Cache - React Project Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>React Query / SWR – ניהול API ו־Cache</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה צריך ספרייה לניהול נתונים?</h2>
+        <ul>
+          <li>שליפה מסודרת של נתונים מהשרת.</li>
+          <li>Cache למניעת קריאות מיותרות.</li>
+          <li>רענון אוטומטי כשהנתונים מתיישנים.</li>
+          <li>טיפול נוח ב־loading/error states.</li>
+        </ul>
+        <p>
+          במקום useEffect + fetch + useState בכל קומפוננטה, הספריות האלו עושות
+          זאת עבורנו.
+        </p>
+      </section>
+
+      <section class="category">
+        <h2>מה הן נותנות?</h2>
+        <ul>
+          <li>שליפה אוטומטית וניהול מצבי טעינה/שגיאה.</li>
+          <li>Cache חכם כדי להימנע מקריאות כפולות.</li>
+          <li>Refetch אוטומטי כשחלון מקבל פוקוס או נתונים מתיישנים.</li>
+          <li>Stale‑While‑Revalidate: הצגת נתונים מיידית ורענון ברקע.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>דוגמה – React Query</h2>
+        <p>
+          נדרש לעטוף את האפליקציה ב־<code>QueryClientProvider</code> פעם אחת.
+        </p>
+        <pre
+          dir="ltr"
+        ><code>import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+const client = new QueryClient();
+// root
+&lt;QueryClientProvider client={client}&gt;
+  &lt;App /&gt;
+&lt;/QueryClientProvider&gt;</code></pre>
+        <pre dir="ltr"><code>import { useQuery } from '@tanstack/react-query';
+
+const fetchUsers = async () =&gt; {
+  const res = await fetch('/api/users');
+  return res.json();
+};
+
+export const Users = () =&gt; {
+  const { data, error, isLoading } = useQuery(['users'], fetchUsers);
+
+  if (isLoading) return &lt;p&gt;Loading...&lt;/p&gt;;
+  if (error) return &lt;p&gt;Something went wrong&lt;/p&gt;;
+
+  return (
+    &lt;ul&gt;
+      {data.map((user: any) =&gt; (
+        &lt;li key={user.id}&gt;{user.name}&lt;/li&gt;
+      ))}
+    &lt;/ul&gt;
+  );
+};</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>דוגמה – SWR</h2>
+        <p>ניתן (לא חובה) לעטוף ב־<code>SWRConfig</code> להגדרות כלליות.</p>
+        <pre dir="ltr"><code>import { SWRConfig } from 'swr';
+&lt;SWRConfig value={{ fetcher: (url) =&gt; fetch(url).then(r =&gt; r.json()) }}&gt;
+  &lt;App /&gt;
+&lt;/SWRConfig&gt;</code></pre>
+        <pre dir="ltr"><code>import useSWR from 'swr';
+
+const fetcher = (url: string) =&gt; fetch(url).then(res =&gt; res.json());
+
+export const Users = () =&gt; {
+  const { data, error, isLoading } = useSWR('/api/users', fetcher);
+
+  if (isLoading) return &lt;p&gt;Loading...&lt;/p&gt;;
+  if (error) return &lt;p&gt;Something went wrong&lt;/p&gt;;
+
+  return (
+    &lt;ul&gt;
+      {data.map((user: any) =&gt; (
+        &lt;li key={user.id}&gt;{user.name}&lt;/li&gt;
+      ))}
+    &lt;/ul&gt;
+  );
+};</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>מתי להשתמש ב־React Query?</h2>
+        <ul>
+          <li>אפליקציות מורכבות עם מקורות נתונים רבים.</li>
+          <li>צורך בשליטה עמוקה ב־cache, refetching, pagination.</li>
+          <li>פיצ׳רים מתקדמים: Infinite Queries, Mutations.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>מתי להשתמש ב־SWR?</h2>
+        <ul>
+          <li>פרויקטים קלים עד בינוניים.</li>
+          <li>API פשוט עם מינימום קונפיגורציה.</li>
+          <li>ניהול fetch דקלרטיבי וקליל.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <ul>
+          <li>שתיהן פותרות API state management וחוסכות boilerplate.</li>
+          <li>React Query — יותר פיצ׳רים ושליטה מלאה.</li>
+          <li>SWR — מינימליזם ומהירות התחלה.</li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

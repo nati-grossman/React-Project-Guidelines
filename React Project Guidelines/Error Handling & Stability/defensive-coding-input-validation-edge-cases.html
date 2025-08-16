@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Defensive Coding – בדיקות קלט ומצבים קיצוניים - React Project Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Defensive Coding – בדיקות קלט ומצבים קיצוניים</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה צריך Defensive Coding?</h2>
+        <p>
+          בפיתוח אפליקציות React, קוד שלא מתמודד עם קלט לא צפוי או מצבים
+          קיצוניים עלול לגרום לקריסות או בעיות בלתי צפויות. Defensive Coding היא
+          גישה שמגנה על האפליקציה גם כאשר הנתונים או הסביבה אינם אידיאליים.
+        </p>
+      </section>
+
+      <section class="category">
+        <h2>למה זה חשוב?</h2>
+        <ul>
+          <li>מונע קריסות בלתי צפויות של הקומפוננטות.</li>
+          <li>מבטיח חוויית משתמש יציבה גם עם קלט שגוי או חלקי.</li>
+          <li>מפשט איתור ותיקון בעיות במערכת.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>איך מיישמים Defensive Coding?</h2>
+        <h3>בדיקות קלט</h3>
+        <ul>
+          <li>
+            אימות סוג הנתונים לפני שימוש (<code>typeof</code>,
+            <code>Array.isArray</code>).
+          </li>
+          <li>
+            בדיקה שהערכים קיימים (<code>null</code> / <code>undefined</code>)
+            לפני גישה למאפיינים.
+          </li>
+          <li>הגדרת ערכי ברירת מחדל בקומפוננטות.</li>
+        </ul>
+        <pre dir="ltr"><code>// אימות סוג נתון לפני שימוש
+function normalizeUsers(input) {
+  if (!Array.isArray(input)) return [];
+  return input;
+}
+
+// ערכי ברירת מחדל ו-Optional Chaining
+function UserCard({ user }) {
+  const name = user?.name ?? 'Unknown';
+  return &lt;div&gt;{name}&lt;/div&gt;;
+}</code></pre>
+
+        <h3>טיפול במצבים קיצוניים</h3>
+        <ul>
+          <li>ניהול מצב טעינה ומצב שגיאה לצד מצב "אין נתונים".</li>
+          <li>שימוש ב־Error Boundaries סביב אזורים רגישים.</li>
+          <li>שמירה על פונקציות נקיות מ־side effects לא מבוקרים.</li>
+        </ul>
+        <pre dir="ltr"><code>{isLoading ? (
+  &lt;Spinner /&gt;
+) : error ? (
+  &lt;ErrorMessage /&gt;
+) : items?.length ? (
+  items.map((item) =&gt; &lt;Item key={item.id} {...item} /&gt;)
+) : (
+  &lt;EmptyState /&gt;
+)}</code></pre>
+
+        <h3>שימוש במבני נתונים יציבים</h3>
+        <ul>
+          <li>שימוש ב־default props או destructuring עם ערכי ברירת מחדל.</li>
+          <li>בדיקה לפני iteration על מערכים ריקים.</li>
+        </ul>
+        <pre dir="ltr"><code>function List({ items = [] }) {
+  return items.length
+    ? items.map((item) =&gt; &lt;Item key={item.id} {...item} /&gt;)
+    : &lt;EmptyState /&gt;;
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>טיפים למימוש יעיל</h2>
+        <ul>
+          <li>שילוב עם TypeScript לשמירה על סוגים וערכים צפויים.</li>
+          <li>
+            כתיבת קומפוננטות שמטפלות בערכים חסרים ומקבלות props בצורה גמישה.
+          </li>
+          <li>כתיבת בדיקות יחידה (Unit Tests) למקרי קצה.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          Defensive Coding הוא עקרון קריטי לפיתוח React יציב ואמין. בדיקות קלט
+          ומצבים קיצוניים מאפשרות למנוע תקלות, לשמור על חוויית משתמש טובה
+          ולהפחית עלויות תחזוקה.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

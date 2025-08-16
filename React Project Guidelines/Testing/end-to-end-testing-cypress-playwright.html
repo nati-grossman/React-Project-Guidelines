@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      End-to-End Testing עם Cypress / Playwright - React Project Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>End-to-End Testing עם Cypress / Playwright</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה E2E Testing חשוב?</h2>
+        <p>
+          End-to-End (E2E) Testing בודק את האפליקציה כולה – מה־UI ועד ה־backend
+          – כדי לוודא שכל המערכת מתפקדת כצפוי. כלי כמו Cypress או Playwright
+          מאפשרים סימולציה של משתמש אמיתי, כולל אינטראקציה עם דפים, טפסים ו־API.
+        </p>
+        <ul>
+          <li>מוודא שכל רכיבי האפליקציה משתלבים ועובדים יחד.</li>
+          <li>
+            מזהה באגים בממשק משתמש או בזרימת הנתונים שלא נחשפים ב־Unit או
+            Integration Tests.
+          </li>
+          <li>
+            מאפשר בדיקה אוטומטית של תהליכי משתמש קריטיים (login, checkout, form
+            submission).
+          </li>
+          <li>משפר ביטחון בקוד לפני release או deployment.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>איך זה עובד</h2>
+        <h3>1. סימולציה של משתמש אמיתי</h3>
+        <p>
+          משתמשים בלחצנים, מזינים טקסט, מנווטים בין דפים ובודקים את התוצאה על
+          המסך.
+        </p>
+        <p>דוגמה בסיסית ב־Cypress:</p>
+        <pre dir="ltr"><code>describe('Login Flow', () => {
+  it('should log in successfully', () => {
+    cy.visit('/login');
+    cy.get('input[name=email]').type('user@example.com');
+    cy.get('input[name=password]').type('password123');
+    cy.get('button[type=submit]').click();
+    cy.url().should('include', '/dashboard');
+    cy.contains('Welcome').should('be.visible');
+  });
+
+  it('should show error for invalid credentials', () => {
+    cy.visit('/login');
+    cy.get('input[name=email]').type('invalid@example.com');
+    cy.get('input[name=password]').type('wrongpassword');
+    cy.get('button[type=submit]').click();
+    cy.contains('Invalid credentials').should('be.visible');
+  });
+});</code></pre>
+
+        <p>דוגמה ב־Playwright:</p>
+        <pre dir="ltr"><code>import { test, expect } from '@playwright/test';
+
+test('user can complete shopping flow', async ({ page }) => {
+  await page.goto('/products');
+  
+  // Add product to cart
+  await page.click('[data-testid="add-to-cart-1"]');
+  await expect(page.locator('.cart-count')).toHaveText('1');
+  
+  // Go to checkout
+  await page.click('[data-testid="cart-button"]');
+  await page.fill('input[name="email"]', 'test@example.com');
+  await page.fill('input[name="address"]', '123 Main St');
+  
+  // Complete purchase
+  await page.click('button:has-text("Complete Order")');
+  await expect(page.locator('.success-message')).toBeVisible();
+});</code></pre>
+
+        <h3>2. בדיקה מול API</h3>
+        <p>ניתן לוודא שהקריאות ל־backend מחזירות את הנתונים הנכונים.</p>
+        <pre dir="ltr"><code>// Cypress - מיירוט קריאות API
+describe('API Integration', () => {
+  it('loads user data correctly', () => {
+    cy.intercept('GET', '/api/user', { fixture: 'user.json' }).as('getUser');
+    cy.visit('/profile');
+    cy.wait('@getUser');
+    cy.contains('John Doe').should('be.visible');
+  });
+});
+
+// Playwright - בדיקת API responses
+test('API returns correct data', async ({ page }) => {
+  // Listen for API calls
+  const responsePromise = page.waitForResponse('/api/users');
+  await page.goto('/users');
+  const response = await responsePromise;
+  
+  expect(response.status()).toBe(200);
+  const data = await response.json();
+  expect(data.users).toHaveLength(10);
+});</code></pre>
+
+        <h3>3. ניהול תרחישים מורכבים</h3>
+        <p>
+          ניתן ליצור סצנריואים מורכבים הכוללים מספר קומפוננטות, states ו־flows.
+        </p>
+        <pre dir="ltr"><code>// Playwright - בדיקה על מספר דפדפנים
+import { test, devices } from '@playwright/test';
+
+test.describe('Multi-browser testing', () => {
+  ['Desktop Chrome', 'Desktop Firefox', 'Mobile Safari'].forEach(deviceName => {
+    test(`works on ${deviceName}`, async ({ browser }) => {
+      const context = await browser.newContext({
+        ...devices[deviceName]
+      });
+      const page = await context.newPage();
+      
+      await page.goto('/');
+      await expect(page.locator('h1')).toBeVisible();
+    });
+  });
+});</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>Cypress vs Playwright</h2>
+        <h3>Cypress</h3>
+        <ul>
+          <li>
+            <strong>יתרונות:</strong> UI ידידותי, debugging מצוין, קהילה גדולה
+          </li>
+          <li>
+            <strong>חסרונות:</strong> רק Chrome-based browsers, אין תמיכה
+            ב־multi-tab
+          </li>
+        </ul>
+
+        <h3>Playwright</h3>
+        <ul>
+          <li>
+            <strong>יתרונות:</strong> תמיכה בכל הדפדפנים, מהיר יותר, auto-wait
+            מובנה
+          </li>
+          <li><strong>חסרונות:</strong> עקומת למידה, פחות ויזואלי</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>טיפים למימוש יעיל</h2>
+        <ul>
+          <li>לשמור על בדיקות קריאות וברורות – להבין מה כל בדיקה עושה.</li>
+          <li>להשתמש ב־fixtures או mocks כדי לוודא בדיקות עקביות ויציבות.</li>
+          <li>להריץ בדיקות כחלק מ־CI/CD כדי למנוע regressions.</li>
+          <li>להתחיל עם בדיקות קריטיות (critical paths) ולהרחיב בהדרגה.</li>
+          <li>להשתמש ב־data-testid attributes לסלקטורים יציבים.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          E2E Testing עם Cypress או Playwright מאפשר בדיקה אמיתית של האפליקציה
+          מנקודת מבט המשתמש. שילוב עם Unit ו־Integration Tests מבטיח אפליקציה
+          יציבה, אמינה ומוכנה לשימוש, עם פחות באגים והפתעות בשטח.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

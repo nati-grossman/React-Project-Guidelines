@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Barrel Exports (index.ts) - React Project Guidelines</title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Barrel Exports (index.ts)</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>הבעיה: ייבוא מסורבל בפרויקטים גדולים</h2>
+        <p>כשמספר הקבצים גדל, נתיבי ייבוא ארוכים מקשים על קריאה ותחזוקה.</p>
+        <ul>
+          <li>שורות ייבוא ארוכות ומועדות לטעויות.</li>
+          <li>שכפול נתיבים בכל קובץ.</li>
+          <li>Refactor נתיבים הופך למשימה מסורבלת.</li>
+        </ul>
+        <pre
+          dir="ltr"
+        ><code>import UserCard from '../../features/users/components/UserCard';
+import UserList from '../../features/users/components/UserList';
+import { useUsers } from '../../features/users/hooks/useUsers';</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>הפתרון: Barrel Exports</h2>
+        <p>
+          <strong>Barrel Exports</strong> הוא קובץ <code>index.ts</code> שמרכז
+          יצוא מכל תת־מודולי הפיצ׳ר.
+        </p>
+        <p>התוצאה: ייבוא קצר, נקי ויציב לשינויים.</p>
+        <h3>מבנה לדוגמה</h3>
+        <pre dir="ltr"><code>features/users/
+├─ components/
+│  ├─ UserCard.tsx
+│  └─ UserList.tsx
+├─ hooks/
+│  └─ useUsers.ts
+├─ services/
+│  └─ userService.ts
+└─ index.ts</code></pre>
+
+        <h3>index.ts</h3>
+        <pre dir="ltr"><code>// features/users/index.ts
+export * from './components/UserCard';
+export * from './components/UserList';
+export * from './hooks/useUsers';
+export * from './services/userService';</code></pre>
+
+        <h3>ייבוא נקי</h3>
+        <pre
+          dir="ltr"
+        ><code>import { UserCard, UserList, useUsers } from './features/users';</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>יתרונות של Barrel Exports</h2>
+        <ul>
+          <li><strong>ייבוא קצר ונקי</strong>: אין נתיבים ארוכים ומסורבלים.</li>
+          <li><strong>סדר וארגון</strong>: כל פיצ׳ר מייצא ממקום אחד.</li>
+          <li>
+            <strong>מודולריות</strong>: העברה לפרויקט אחר קלה דרך ה־index.ts.
+          </li>
+          <li>
+            <strong>עדכונים פשוטים</strong>: מוסיפים יצוא – והייבוא נשאר זהה.
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>טיפים חשובים</h2>
+        <ul>
+          <li>
+            <strong>לא over-export</strong>: ייצאו רק מה שבאמת דרוש מחוץ לפיצ׳ר.
+          </li>
+          <li>
+            <strong>שמות ברורים</strong>: שמות קבצים/קומפוננטות תיאוריים מקלים
+            על ייבוא ברור.
+          </li>
+          <li>
+            <strong>מיקום index.ts</strong>: תמיד בשורש תיקיית הפיצ׳ר (לא
+            בתת־תיקייה) כדי לשמור היררכיה ברורה.
+          </li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

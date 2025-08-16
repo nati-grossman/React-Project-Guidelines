@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recoil – חלופות קלות לניהול State - React Project Guidelines</title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Recoil – חלופות קלות לניהול State</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה Recoil?</h2>
+        <p>
+          Redux הוא כלי עוצמתי אך לא תמיד נדרש. לעיתים צריך ניהול state גלובלי
+          פשוט עם מעט boilerplate — כאן Recoil נכנסת לתמונה.
+        </p>
+        <p>
+          Recoil (מטא) מאפשרת שיתוף state בין קומפוננטות בלי Actions/Reducers
+          ו־Stores ענקיים, במודל אינטואיטיבי ופשוט.
+        </p>
+      </section>
+
+      <section class="category">
+        <h2>הרעיון המרכזי</h2>
+        <ul>
+          <li>
+            <strong>Atoms</strong>: יחידות ה־state הקטנות ביותר. כל קומפוננטה
+            ש"נרשמת" לאטום תתרנדר כאשר הוא משתנה.
+          </li>
+          <li>
+            <strong>Selectors</strong>: פונקציות טהורות שמחשבות מצב נגזר (וגם
+            יכולות לכתוב חזרה אם מגדירים <code>set</code>).
+          </li>
+          <li>
+            <strong>גרף תלות</strong>: Recoil בונה גרף בין Atoms ל־Selectors
+            ומבצע רינדור רק למי שתלוי במה שהשתנה.
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>איפה מפעילים את Recoil?</h2>
+        <p>עוטפים את האפליקציה פעם אחת ב־<code>RecoilRoot</code> (ב־root):</p>
+        <pre dir="ltr"><code>import { RecoilRoot } from 'recoil';
+
+// root
+&lt;RecoilRoot&gt;
+  &lt;App /&gt;
+&lt;/RecoilRoot&gt;</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>דוגמה בסיסית</h2>
+        <p>
+          כאן מגדירים <strong>atom</strong> בשם <code>counterState</code> — זהו
+          ה־state המשותף. כל קומפוננטה שצורכת אותו קוראת/כותבת לאותו ערך.
+        </p>
+        <pre dir="ltr"><code>// state.ts
+import { atom } from 'recoil';
+
+export const counterState = atom&lt;number&gt;({
+  key: 'counterState',
+  default: 0
+});
+
+// Counter.tsx
+import { useRecoilState } from 'recoil';
+import { counterState } from './state';
+
+export const Counter = () =&gt; {
+  const [count, setCount] = useRecoilState(counterState);
+
+  return (
+    &lt;div&gt;
+      &lt;p&gt;Count: {count}&lt;/p&gt;
+      &lt;button onClick={() =&gt; setCount(count + 1)}&gt;+&lt;/button&gt;
+    &lt;/div&gt;
+  );
+};</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>Selector (Derived State) — בקצרה וברור</h2>
+        <p>
+          Selector הוא "שדה מחושב" שנגזר מאטומים/סלקטורים אחרים. הוא זוכר תוצאות
+          לפי תלות (memoization) ומרנדר רק צרכנים תלויים.
+        </p>
+        <pre
+          dir="ltr"
+        ><code>import { selector, useRecoilValue, useRecoilState } from 'recoil';
+import { counterState } from './state';
+
+// קריאה בלבד (computed):
+const doubleCountState = selector&lt;number&gt;({
+  key: 'doubleCountState',
+  get: ({ get }) =&gt; get(counterState) * 2,
+});
+
+export function CounterDouble() {
+  const doubleCount = useRecoilValue(doubleCountState);
+  return &lt;span&gt;×2: {doubleCount}&lt;/span&gt;;
+}
+
+// ניתן גם "לכתוב" דרך selector (bridge) — הופך מחרוזת למספר:
+const countTextState = selector&lt;string&gt;({
+  key: 'countTextState',
+  get: ({ get }) =&gt; String(get(counterState)),
+  set: ({ set }, newValue) =&gt; {
+    const n = Number(newValue);
+    if (!Number.isNaN(n)) set(counterState, n);
+  },
+});
+
+export function CounterInput() {
+  const [text, setText] = useRecoilState(countTextState);
+  return &lt;input value={text} onChange={(e) =&gt; setText(e.target.value)} /&gt;;
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>מי משתמש באותו ערך? חיבור הכול יחד</h2>
+        <p>
+          שלוש קומפוננטות שונות חולקות את אותו <code>counterState</code>:
+          <code>Counter</code> (קוראת/מעדכנת), <code>CounterDouble</code> (קוראת
+          ערך מחושב), ו־<code>CounterInput</code> (ממפה טקסט↔מספר). שינוי באחת
+          מתעדכן מיידית בכולן.
+        </p>
+        <pre dir="ltr"><code>// App.tsx
+import { RecoilRoot } from 'recoil';
+import { Counter } from './Counter';
+import { CounterDouble } from './CounterDouble';
+import { CounterInput } from './CounterInput';
+
+export default function App() {
+  return (
+    &lt;RecoilRoot&gt;
+      &lt;Counter /&gt;        {/* מעלה את המונה המשותף */}
+      &lt;CounterDouble /&gt; {/* מציג ×2 של אותו מונה */}
+      &lt;CounterInput /&gt;  {/* עורך את אותו מונה כמחרוזת */}
+    &lt;/RecoilRoot&gt;
+  );
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>למה לבחור ב־Recoil?</h2>
+        <ul>
+          <li>
+            <strong>פשטות</strong>: הגדרה קצרה וברורה — ללא Reducers/Actions.
+          </li>
+          <li><strong>ביצועים</strong>: עדכון רק של הצורכים הרלוונטיים.</li>
+          <li><strong>Derived State</strong>: Selectors מחושבים מתוך state.</li>
+          <li><strong>מודולריות</strong>: קל לסווג Atoms לפי פיצ׳רים.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>מתי זה מתאים?</h2>
+        <ul>
+          <li>אפליקציות קטנות־בינוניות עם צורך ב־state גלובלי פשוט.</li>
+          <li>פרויקטים חדשים שרוצים להימנע מ־Redux overhead.</li>
+          <li>שילוב עם Component Composition כדי להימנע מ־Drilling.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>מתי פחות?</h2>
+        <ul>
+          <li>State מורכב במיוחד — שקלו Redux Toolkit/Zustand.</li>
+          <li>צורך ב־Time Travel Debugging/Ecosystem רחב — Redux עדיף.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <ul>
+          <li>State גלובלי פשוט.</li>
+          <li>קוד קצר וברור.</li>
+          <li>פחות תחזוקה ו־Boilerplate.</li>
+          <li>עדכונים חכמים רק היכן שצריך.</li>
+        </ul>
+        <p>
+          Recoil היא פתרון קליל ומהיר כאשר אין צורך בניהול state מורכב במיוחד.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

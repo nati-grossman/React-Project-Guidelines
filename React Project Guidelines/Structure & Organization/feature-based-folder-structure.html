@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Feature-Based Folder Structure – מבנה לפי פיצ׳רים - React Project
+      Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Feature-Based Folder Structure – מבנה לפי פיצ׳רים</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה חשוב סדר ומבנה תקין?</h2>
+        <p>
+          בפרויקטים גדולים, סדר בתיקיות הוא ההבדל בין פרויקט שזורם לפרויקט תקוע.
+        </p>
+        <ul>
+          <li>קל יותר לאתר קבצים ולהבין את הזרימה.</li>
+          <li>תחזוקה ושינויים מהירים בלי לשבור חלקים אחרים.</li>
+          <li>צמיחה בריאה של הקוד מבלי להעמיס על מבנה הפרויקט.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>המספרים של הסדר</h2>
+        <p>
+          מבנה לפי סוג קובץ (Components/Services/Hooks/Utils) נוח בהתחלה, אבל
+          ברגע שמתרחבים הוא יוצר עומס:
+        </p>
+        <ul>
+          <li>תיקיות מתנפחות עם עשרות קבצים.</li>
+          <li>הקשר בין קבצים שייך לפיצ׳ר הולך לאיבוד.</li>
+          <li>ניווט ארוך וייבוא מסורבל בין אזורים שונים.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>הפתרון: מבנה לפי פיצ׳רים</h2>
+        <p>
+          Feature-Based Folder Structure (מבנה לפי פיצ׳רים) אומר שכל פיצ׳ר של
+          המערכת מקבל תיקייה משלו, שבתוכה נמצאים כל הקבצים הקשורים אליו:
+          קומפוננטות, Services, Hooks, Styles, Tests – הכל במקום אחד.
+        </p>
+        <p>כך נשמר ההקשר העסקי והטכני של כל פיצ׳ר במקום ממוקד וקל לניהול.</p>
+        <h3>דוגמה:</h3>
+        <pre dir="ltr"><code>src/
+├─ features/
+│  ├─ users/
+│  │  ├─ components/
+│  │  │  ├─ UserCard.tsx
+│  │  │  └─ UserList.tsx
+│  │  ├─ hooks/
+│  │  │  └─ useUsers.ts
+│  │  ├─ services/
+│  │  │  └─ userService.ts
+│  │  ├─ styles/
+│  │  │  └─ users.css
+│  │  └─ index.ts
+│  ├─ dashboard/
+│  │  └─ ...
+│  └─ settings/
+│     └─ ...
+├─ shared/
+│  ├─ components/
+│  └─ utils/
+└─ App.tsx</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>יתרונות של מבנה לפי פיצ׳רים</h2>
+        <ul>
+          <li>
+            <strong>קל למצוא קוד</strong>: כל מה שקשור ל־Users נמצא בתיקייה אחת,
+            אין צורך לקפוץ בין כמה תיקיות.
+          </li>
+          <li>
+            <strong>תחזוקה פשוטה</strong>: כשיש באגים או שינויים בפיצ׳ר מסוים,
+            עובדים בתוך תיקייה אחת בלבד.
+          </li>
+          <li>
+            <strong>Scalability</strong>: כשמוסיפים פיצ׳ר חדש – פשוט יוצרים
+            תיקייה חדשה, בלי לבלגן תיקיות מרכזיות כמו Components או Services.
+          </li>
+          <li>
+            <strong>קוד מודולרי</strong>: מאפשר לייצא פיצ׳רים בצורה מודולרית,
+            ולשתף אותם בין פרויקטים.
+          </li>
+          <li>
+            <strong>קל ל־index.ts</strong>: אפשר ליצור index.ts בכל תיקייה
+            שמייצא את כל הקבצים שלה, וככה לייבא בקוד הראשי בצורה נקייה.
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>טיפים חשובים</h2>
+        <ul>
+          <li>
+            <strong>Shared vs Features</strong>: כל מה שמשותף בין פיצ׳רים (כמו
+            קומפוננטות כלליות או פונקציות Utilities) צריך להיות בתיקיית shared.
+          </li>
+          <li>
+            <strong>Index.ts</strong>: שימוש ב־index.ts בכל תיקייה עוזר להקל על
+            ייבוא קבצים ומונע נתיבים ארוכים.
+          </li>
+          <li>
+            <strong>Keep it flat</strong>: בתוך הפיצ׳ר, לא כדאי ליצור היררכיות
+            עמוקות מדי – עד 2–3 רמות מספיק לרוב.
+          </li>
+          <li>
+            <strong>Tests בצמוד לפיצ׳ר</strong>: אם יש קבצי בדיקה
+            (unit/integration), שמרו אותם ליד הקוד שהם בודקים.
+          </li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Integration Testing – בדיקות שילוב רכיבים - React Project Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Integration Testing – בדיקות שילוב רכיבים</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה Integration Testing חשוב?</h2>
+        <p>
+          בפיתוח React, Integration Testing בודק איך קומפוננטות ורכיבים שונים
+          עובדים יחד, מעבר לבדיקות יחידה (Unit Testing) שממוקדות בקומפוננטה אחת
+          בלבד. המטרה היא לוודא שהמערכת מתפקדת כשורה כאשר חלקים שונים משולבים.
+        </p>
+        <ul>
+          <li>מוודא שהקומפוננטות מתקשרות ומעבירות props נכון.</li>
+          <li>מזהה בעיות בזמן אמת ש־Unit Tests לבד לא מגלות.</li>
+          <li>מבטיח שה־UI, state ו־API עובדים יחד כמו שצריך.</li>
+          <li>
+            חשוב במיוחד עבור אפליקציות מורכבות עם state management ו־API calls.
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>איך לבצע Integration Testing</h2>
+        <h3>1. בדיקת רכיבי UI יחד</h3>
+        <p>מוודא שממשק המשתמש מתנהג כראוי כאשר כמה קומפוננטות מופיעות יחד.</p>
+        <p>לדוגמה, טופס עם Input, Button ו־Validation Message:</p>
+        <pre
+          dir="ltr"
+        ><code>import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import Form from './Form';
+
+test('shows error when submitting empty form', async () => {
+  const user = userEvent.setup();
+  render(&lt;Form /&gt;);
+  
+  await user.click(screen.getByRole('button', { name: /submit/i }));
+  
+  expect(screen.getByText(/field is required/i)).toBeInTheDocument();
+});
+
+test('submits form successfully with valid data', async () => {
+  const user = userEvent.setup();
+  const onSubmit = jest.fn();
+  
+  render(&lt;Form onSubmit={onSubmit} /&gt;);
+  
+  await user.type(screen.getByLabelText(/name/i), 'John Doe');
+  await user.type(screen.getByLabelText(/email/i), 'john@example.com');
+  await user.click(screen.getByRole('button', { name: /submit/i }));
+  
+  expect(onSubmit).toHaveBeenCalledWith({
+    name: 'John Doe',
+    email: 'john@example.com'
+  });
+});</code></pre>
+
+        <h3>2. בדיקת אינטראקציה עם State / Context</h3>
+        <p>בדיקה שהקומפוננטות צורכות נכון מידע מ־Redux, Recoil או Context.</p>
+        <p>לדוגמה: קומפוננטה שמציגה רשימה מ־store ומסננת לפי חיפוש:</p>
+        <pre
+          dir="ltr"
+        ><code>import { render, screen } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import { createStore } from 'redux';
+import TodoApp from './TodoApp';
+
+const initialState = {
+  todos: [
+    { id: 1, text: 'Learn React', completed: false },
+    { id: 2, text: 'Write tests', completed: true }
+  ]
+};
+
+test('filters todos based on search input', async () => {
+  const store = createStore(reducer, initialState);
+  const user = userEvent.setup();
+  
+  render(
+    &lt;Provider store={store}&gt;
+      &lt;TodoApp /&gt;
+    &lt;/Provider&gt;
+  );
+  
+  expect(screen.getByText('Learn React')).toBeInTheDocument();
+  expect(screen.getByText('Write tests')).toBeInTheDocument();
+  
+  await user.type(screen.getByPlaceholderText(/search/i), 'React');
+  
+  expect(screen.getByText('Learn React')).toBeInTheDocument();
+  expect(screen.queryByText('Write tests')).not.toBeInTheDocument();
+});</code></pre>
+
+        <h3>3. בדיקת אינטגרציה עם API</h3>
+        <p>
+          ניתן להשתמש ב־mocks או tools כמו MSW (Mock Service Worker) כדי לדמות
+          קריאות API.
+        </p>
+        <pre
+          dir="ltr"
+        ><code>import { render, screen, waitFor } from '@testing-library/react';
+import { setupServer } from 'msw/node';
+import { rest } from 'msw';
+import UserProfile from './UserProfile';
+
+const server = setupServer(
+  rest.get('/api/user/123', (req, res, ctx) => {
+    return res(ctx.json({
+      id: 123,
+      name: 'John Doe',
+      email: 'john@example.com'
+    }));
+  })
+);
+
+beforeAll(() => server.listen());
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+
+test('loads and displays user data', async () => {
+  render(&lt;UserProfile userId={123} /&gt;);
+  
+  expect(screen.getByText(/loading/i)).toBeInTheDocument();
+  
+  await waitFor(() => {
+    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.getByText('john@example.com')).toBeInTheDocument();
+  });
+});</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>טיפים למימוש יעיל</h2>
+        <ul>
+          <li>
+            לשמור על בדיקות קריאות וברורות – לבדוק את התוצאה שהמשתמש רואה.
+          </li>
+          <li>
+            להשתמש ב־React Testing Library יחד עם Jest כדי לבדוק אינטגרציה.
+          </li>
+          <li>
+            למנוע בדיקות כבדות מדי – Integration Tests ממוקדות במספר רכיבים יחד,
+            לא במערכת כולה.
+          </li>
+          <li>לשלב בדיקות כחלק מ־CI/CD כדי למנוע regressions.</li>
+          <li>להשתמש ב־MSW או mocks דומים לדמוי API calls.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          Integration Testing ב־React מאפשר לבדוק שהקומפוננטות עובדות יחד בצורה
+          נכונה. שילוב עם Unit Tests ו־E2E Testing מבטיח אפליקציה יציבה,
+          תחזוקתית ומוכנה למשתמשים, עם פחות באגים והפתעות בזמן ריצה.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

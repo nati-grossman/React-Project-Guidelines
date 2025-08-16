@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Secure API Calls – שימוש ב‑HTTPS, tokens, CORS - React Project Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Secure API Calls – שימוש ב‑HTTPS, tokens, CORS</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה Secure API Calls חשובים?</h2>
+        <p>
+          בפיתוח React, קריאות ל‑API הן חיוניות, אך חשיפה לא נכונה עלולה להוביל
+          לפרצות אבטחה משמעותיות. Secure API Calls הן הדרך להבטיח שהתקשורת בין
+          ה‑frontend ל‑backend תהיה בטוחה, מוצפנת ומבוקרת.
+        </p>
+        <ul>
+          <li>
+            מונע interception של נתונים רגישים (כמו סיסמאות או tokens) ברשת.
+          </li>
+          <li>מונע גישה לא מורשית ל‑API על ידי צדדים שלישיים.</li>
+          <li>מאפשר עבודה בטוחה מול דפדפנים מודרניים ומכשירים ניידים.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>עקרונות מפתח</h2>
+        <h3>1. HTTPS</h3>
+        <p>כל קריאה ל‑API חייבת להתבצע על HTTPS ולא HTTP.</p>
+        <p>
+          HTTPS מצפין את התקשורת בין הלקוח לשרת ומונע sniffing או
+          man-in-the-middle attacks.
+        </p>
+        <pre dir="ltr"><code>// ✅ SECURE - Always use HTTPS
+const API_BASE_URL = 'https://api.myapp.com';
+
+// ❌ INSECURE - Never use HTTP for sensitive data
+const INSECURE_URL = 'http://api.myapp.com';
+
+// Ensure all API calls use HTTPS
+const secureApiClient = axios.create({
+  baseURL: 'https://api.myapp.com',
+  timeout: 10000,
+});
+
+// Force HTTPS redirect
+if (window.location.protocol !== 'https:' && process.env.NODE_ENV === 'production') {
+  window.location.href = `https:${window.location.href.substring(window.location.protocol.length)}`;
+}</code></pre>
+
+        <h3>2. Authentication & Authorization עם Tokens</h3>
+        <p>שימוש ב‑JWT (JSON Web Tokens) או API Keys לאימות המשתמשים.</p>
+        <p>מאפשר לוודא שרק משתמשים מורשים יכולים לגשת לנתונים.</p>
+        <pre dir="ltr"><code>import axios from 'axios';
+
+// Create authenticated API client
+const createAuthenticatedClient = () => {
+  const token = localStorage.getItem('authToken');
+  
+  const client = axios.create({
+    baseURL: 'https://api.myapp.com',
+    timeout: 10000,
+  });
+
+  // Add authentication to every request
+  client.interceptors.request.use(
+    (config) => {
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
+
+  // Handle authentication errors
+  client.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error.response?.status === 401) {
+        // Token expired or invalid
+        localStorage.removeItem('authToken');
+        window.location.href = '/login';
+      }
+      return Promise.reject(error);
+    }
+  );
+
+  return client;
+};
+
+// Usage
+const apiClient = createAuthenticatedClient();
+
+async function fetchUserData() {
+  try {
+    const { data } = await apiClient.get('/user/profile');
+    return data;
+  } catch (error) {
+    console.error('Failed to fetch user data:', error);
+    throw error;
+  }
+}</code></pre>
+
+        <h3>3. CORS (Cross-Origin Resource Sharing)</h3>
+        <p>דפדפנים חוסמים קריאות בין דומיינים שונים כברירת מחדל.</p>
+        <p>CORS מאפשר להגדיר אילו דומיינים מורשים לגשת ל‑API.</p>
+        <pre dir="ltr"><code>// Backend configuration (Express.js example)
+import cors from 'cors';
+
+const corsOptions = {
+  origin: [
+    'https://myapp.com',
+    'https://www.myapp.com',
+    process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : null
+  ].filter(Boolean),
+  credentials: true, // Allow cookies
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
+
+// Alternative - manual CORS headers
+app.use((req, res, next) => {
+  const allowedOrigins = ['https://myapp.com', 'https://www.myapp.com'];
+  const origin = req.headers.origin;
+  
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});</code></pre>
+
+        <h3>4. Secure Storage</h3>
+        <p>
+          אין לשמור סיסמאות או טוקנים ב‑localStorage או ב‑sessionStorage בלי
+          הצפנה.
+        </p>
+        <p>ניתן להשתמש ב‑httpOnly cookies עבור JWT כדי למנוע גישה דרך JS.</p>
+        <pre
+          dir="ltr"
+        ><code>// ❌ INSECURE - Storing sensitive data in localStorage
+localStorage.setItem('password', userPassword);
+localStorage.setItem('creditCard', cardNumber);
+
+// ✅ BETTER - Use secure storage for tokens
+class SecureStorage {
+  private static encrypt(data: string): string {
+    // Use a proper encryption library like crypto-js
+    return btoa(data); // This is just a simple example
+  }
+
+  private static decrypt(data: string): string {
+    return atob(data);
+  }
+
+  static setToken(token: string): void {
+    const encrypted = this.encrypt(token);
+    localStorage.setItem('auth_token', encrypted);
+  }
+
+  static getToken(): string | null {
+    const encrypted = localStorage.getItem('auth_token');
+    return encrypted ? this.decrypt(encrypted) : null;
+  }
+
+  static removeToken(): void {
+    localStorage.removeItem('auth_token');
+  }
+}
+
+// ✅ BEST - Use httpOnly cookies (backend implementation)
+// Backend: Set secure cookie
+app.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  
+  // Authenticate user...
+  const token = generateJWT(user);
+  
+  res.cookie('auth_token', token, {
+    httpOnly: true,    // Prevents XSS access
+    secure: true,      // HTTPS only
+    sameSite: 'strict', // CSRF protection
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  });
+  
+  res.json({ success: true });
+});</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>שילוב מתקדם עם Custom Hooks</h2>
+        <pre
+          dir="ltr"
+        ><code>import { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
+
+// Custom hook for secure API calls
+function useSecureApi() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const secureRequest = useCallback(async (config) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Ensure HTTPS
+      if (config.url && !config.url.startsWith('https://')) {
+        throw new Error('Only HTTPS requests are allowed');
+      }
+
+      // Add security headers
+      const secureConfig = {
+        ...config,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          ...config.headers,
+        },
+        timeout: 10000,
+        withCredentials: true, // Include cookies
+      };
+
+      const response = await axios(secureConfig);
+      return response.data;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  return { secureRequest, loading, error };
+}
+
+// Usage in component
+function UserProfile() {
+  const [user, setUser] = useState(null);
+  const { secureRequest, loading, error } = useSecureApi();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userData = await secureRequest({
+          method: 'GET',
+          url: 'https://api.myapp.com/user/profile',
+        });
+        setUser(userData);
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+      }
+    };
+
+    fetchUser();
+  }, [secureRequest]);
+
+  if (loading) return &lt;div&gt;Loading...&lt;/div&gt;;
+  if (error) return &lt;div&gt;Error: {error}&lt;/div&gt;;
+
+  return (
+    &lt;div&gt;
+      &lt;h1&gt;Welcome, {user?.name}&lt;/h1&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>API Rate Limiting & Security Headers</h2>
+        <pre dir="ltr"><code>// Client-side rate limiting
+class RateLimiter {
+  private requests: number[] = [];
+  private maxRequests: number;
+  private timeWindow: number;
+
+  constructor(maxRequests: number = 100, timeWindowMs: number = 60000) {
+    this.maxRequests = maxRequests;
+    this.timeWindow = timeWindowMs;
+  }
+
+  canMakeRequest(): boolean {
+    const now = Date.now();
+    // Remove old requests outside time window
+    this.requests = this.requests.filter(time => now - time < this.timeWindow);
+    
+    if (this.requests.length >= this.maxRequests) {
+      return false;
+    }
+    
+    this.requests.push(now);
+    return true;
+  }
+}
+
+const rateLimiter = new RateLimiter(50, 60000); // 50 requests per minute
+
+// Enhanced API client with rate limiting
+const createSecureApiClient = () => {
+  const client = axios.create({
+    baseURL: 'https://api.myapp.com',
+    timeout: 10000,
+  });
+
+  client.interceptors.request.use((config) => {
+    // Check rate limit
+    if (!rateLimiter.canMakeRequest()) {
+      throw new Error('Rate limit exceeded. Please try again later.');
+    }
+
+    // Add security headers
+    config.headers['X-Requested-With'] = 'XMLHttpRequest';
+    config.headers['X-Content-Type-Options'] = 'nosniff';
+    
+    return config;
+  });
+
+  return client;
+};</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>טיפים למימוש יעיל</h2>
+        <ul>
+          <li>תמיד לוודא שה‑API מאובטח גם בצד השרת.</li>
+          <li>להגדיר timeout ו־retry כדי למנוע התקפות DoS פשוטות.</li>
+          <li>
+            להשתמש ב‑interceptors ב‑Axios או fetch wrappers כדי להוסיף headers
+            אוטומטית.
+          </li>
+          <li>
+            לשלב ניתוח לוגים וניטור (Sentry, LogRocket) כדי לזהות ניסיונות
+            חדירה.
+          </li>
+          <li>
+            להשתמש ב־Content Security Policy (CSP) להגבלת משאבים חיצוניים.
+          </li>
+          <li>לבדוק תוקף של טוקנים ולחדש אותם באופן אוטומטי.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          Secure API Calls משלבים HTTPS, tokens ו‑CORS כדי להבטיח תקשורת בטוחה,
+          ניהול הרשאות נכון ומניעת התקפות. בפיתוח React מודרני, שמירה על אבטחת
+          ה‑API היא תנאי הכרחי לאפליקציה יציבה ואמינה.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Polling / Subscriptions – עדכוני נתונים בזמן אמת - React Project
+      Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Polling / Subscriptions – עדכוני נתונים בזמן אמת</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה עדכונים בזמן אמת חשובים?</h2>
+        <p>
+          בפיתוח React, אפליקציות רבות דורשות שה‑UI יתעדכן בזמן אמת כאשר הנתונים
+          משתנים בשרת. שיטות כמו Polling או Subscriptions מאפשרות לקבל עדכונים
+          אוטומטיים ולשמור על UI סינכרוני עם ה‑backend.
+        </p>
+        <ul>
+          <li>
+            מאפשר חוויית משתמש חלקה ומעודכנת, במיוחד באפליקציות עם מידע דינמי
+            כמו צ'אטים, לוחות מחוונים, או ניהול הזמנות.
+          </li>
+          <li>מסייע למנוע טעויות או נתונים מיושנים שמוצגים למשתמש.</li>
+          <li>
+            מאפשר שילוב חלק עם state management וכלי ניהול cache כמו React Query
+            או SWR.
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>שיטות עיקריות</h2>
+        <h3>1. Polling</h3>
+        <p>האפליקציה שולחת קריאות חוזרות לשרת בפרקי זמן קבועים.</p>
+        <p>פשוט למימוש אך יכול להיות כבד על השרת אם לא מוגדר נכון.</p>
+        <pre dir="ltr"><code>import React, { useState, useEffect } from 'react';
+
+function DataDisplay() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch('/api/data');
+        const result = await response.json();
+        setData(result);
+        setLoading(false);
+      } catch (error) {
+        console.error('Polling error:', error);
+      }
+    };
+
+    // Initial fetch
+    fetchData();
+
+    // Set up polling
+    const interval = setInterval(fetchData, 5000); // כל 5 שניות
+
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) return &lt;div&gt;Loading...&lt;/div&gt;;
+
+  return (
+    &lt;div&gt;
+      &lt;h2&gt;Real-time Data&lt;/h2&gt;
+      &lt;p&gt;Last updated: {new Date().toLocaleTimeString()}&lt;/p&gt;
+      &lt;pre&gt;{JSON.stringify(data, null, 2)}&lt;/pre&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+
+        <h3>2. Subscriptions / WebSockets</h3>
+        <p>מאפשר עדכונים בזמן אמת בלי צורך בקריאות חוזרות.</p>
+        <p>הדאטה נשלח מהשרת למשתמש רק כשיש שינוי.</p>
+        <p>מתאים לאפליקציות עם אירועים תכופים ומיידיים.</p>
+        <pre dir="ltr"><code>import React, { useState, useEffect } from 'react';
+
+function ChatMessages() {
+  const [messages, setMessages] = useState([]);
+  const [connectionStatus, setConnectionStatus] = useState('Connecting...');
+
+  useEffect(() => {
+    const socket = new WebSocket('ws://localhost:4000/chat');
+
+    socket.onopen = () => {
+      setConnectionStatus('Connected');
+    };
+
+    socket.onmessage = (event) => {
+      const newMessage = JSON.parse(event.data);
+      setMessages(prev => [...prev, newMessage]);
+    };
+
+    socket.onclose = () => {
+      setConnectionStatus('Disconnected');
+    };
+
+    socket.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      setConnectionStatus('Error');
+    };
+
+    return () => {
+      socket.close();
+    };
+  }, []);
+
+  const sendMessage = (message) => {
+    if (socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ text: message, timestamp: Date.now() }));
+    }
+  };
+
+  return (
+    &lt;div&gt;
+      &lt;div&gt;Status: {connectionStatus}&lt;/div&gt;
+      &lt;div&gt;
+        {messages.map((msg, index) => (
+          &lt;div key={index}&gt;{msg.text}&lt;/div&gt;
+        ))}
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+
+        <h3>3. שימוש עם React Query / SWR</h3>
+        <p>React Query: refetchInterval מאפשר polling אוטומטי.</p>
+        <p>SWR: refreshInterval דומה, כולל טיפול בשגיאות ו־cache.</p>
+        <pre dir="ltr"><code>// React Query Polling
+import { useQuery } from '@tanstack/react-query';
+
+function LiveDashboard() {
+  const { data, error, isLoading } = useQuery({
+    queryKey: ['dashboard-data'],
+    queryFn: () => fetch('/api/dashboard').then(res => res.json()),
+    refetchInterval: 10000, // Poll every 10 seconds
+    refetchIntervalInBackground: true, // Continue polling when tab is not active
+  });
+
+  if (isLoading) return &lt;div&gt;Loading dashboard...&lt;/div&gt;;
+  if (error) return &lt;div&gt;Error loading dashboard&lt;/div&gt;;
+
+  return (
+    &lt;div&gt;
+      &lt;h2&gt;Live Dashboard&lt;/h2&gt;
+      &lt;div&gt;Active Users: {data.activeUsers}&lt;/div&gt;
+      &lt;div&gt;Total Sales: ${data.totalSales}&lt;/div&gt;
+    &lt;/div&gt;
+  );
+}
+
+// SWR Polling
+import useSWR from 'swr';
+
+const fetcher = url => fetch(url).then(res => res.json());
+
+function StockPrices() {
+  const { data, error } = useSWR('/api/stocks', fetcher, {
+    refreshInterval: 1000, // Refresh every second
+    revalidateOnFocus: true,
+    revalidateOnReconnect: true,
+  });
+
+  if (error) return &lt;div&gt;Failed to load stock prices&lt;/div&gt;;
+  if (!data) return &lt;div&gt;Loading...&lt;/div&gt;;
+
+  return (
+    &lt;div&gt;
+      &lt;h2&gt;Live Stock Prices&lt;/h2&gt;
+      {data.stocks.map(stock => (
+        &lt;div key={stock.symbol}&gt;
+          {stock.symbol}: ${stock.price}
+        &lt;/div&gt;
+      ))}
+    &lt;/div&gt;
+  );
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>Custom Hook לניהול WebSocket</h2>
+        <pre
+          dir="ltr"
+        ><code>import { useState, useEffect, useRef } from 'react';
+
+function useWebSocket(url) {
+  const [socket, setSocket] = useState(null);
+  const [lastMessage, setLastMessage] = useState(null);
+  const [readyState, setReadyState] = useState('CONNECTING');
+
+  useEffect(() => {
+    const ws = new WebSocket(url);
+    setSocket(ws);
+
+    ws.onopen = () => setReadyState('OPEN');
+    ws.onclose = () => setReadyState('CLOSED');
+    ws.onerror = () => setReadyState('ERROR');
+    ws.onmessage = (event) => {
+      setLastMessage(JSON.parse(event.data));
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, [url]);
+
+  const sendMessage = (message) => {
+    if (socket && readyState === 'OPEN') {
+      socket.send(JSON.stringify(message));
+    }
+  };
+
+  return {
+    sendMessage,
+    lastMessage,
+    readyState,
+  };
+}
+
+// Usage
+function ChatComponent() {
+  const { sendMessage, lastMessage, readyState } = useWebSocket('ws://localhost:4000');
+  const [messages, setMessages] = useState([]);
+
+  useEffect(() => {
+    if (lastMessage) {
+      setMessages(prev => [...prev, lastMessage]);
+    }
+  }, [lastMessage]);
+
+  return (
+    &lt;div&gt;
+      &lt;div&gt;Connection: {readyState}&lt;/div&gt;
+      &lt;div&gt;
+        {messages.map((msg, index) => (
+          &lt;div key={index}&gt;{msg.text}&lt;/div&gt;
+        ))}
+      &lt;/div&gt;
+      &lt;button onClick={() => sendMessage({ text: 'Hello!', user: 'User1' })}&gt;
+        Send Message
+      &lt;/button&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>טיפים למימוש יעיל</h2>
+        <ul>
+          <li>
+            <strong>Polling:</strong> לבחור זמן ריענון מתאים כדי לא להכביד על
+            השרת.
+          </li>
+          <li>
+            <strong>Subscriptions:</strong> להבטיח סגירה נקייה של WebSocket בעת
+            unmount.
+          </li>
+          <li>לשלב עם caching כדי למנוע רינדורים מיותרים.</li>
+          <li>לחשוב על fallback למקרה של חוסר חיבור או שגיאה ברשת.</li>
+          <li>
+            להשתמש ב־React Query או SWR לניהול polling מתקדם עם cache ו־error
+            handling.
+          </li>
+          <li>
+            לשקול שימוש ב־Server-Sent Events (SSE) כחלופה ל־WebSockets למקרים
+            פשוטים יותר.
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          Polling ו‑Subscriptions מאפשרים אפליקציות React להציג נתונים בזמן אמת
+          בצורה אמינה ויעילה. בחירה נכונה בין שתי השיטות תלויה בתדירות השינויים,
+          משאבי השרת וחוויית המשתמש הרצויה.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

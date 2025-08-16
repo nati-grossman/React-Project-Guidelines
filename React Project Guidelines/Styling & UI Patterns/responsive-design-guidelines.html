@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Responsive Design Guidelines - React Project Guidelines</title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Responsive Design Guidelines</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה Responsive Design חשוב?</h2>
+        <p>
+          בפיתוח אפליקציות ווב מודרניות, התמיכה במגוון מסכים וגדלים היא קריטית.
+          Responsive Design מאפשר לממשק המשתמש להסתגל בצורה דינמית לגודל המסך,
+          ומבטיח חוויית משתמש עקבית ונוחה בכל מכשיר.
+        </p>
+        <ul>
+          <li>מבטיח שימוש נוח במובייל, טאבלט ודסקטופ.</li>
+          <li>מונע בעיות פריסה כמו חיתוך תוכן או גלילה מיותרת.</li>
+          <li>תורם לשמירה על חוויית משתמש אחידה ואסתטית.</li>
+          <li>משפר דירוג SEO ומממש Best Practices בתחום Web.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>עקרונות מפתח</h2>
+        <h3>Grid Systems</h3>
+        <ul>
+          <li>שימוש ב־CSS Grid או Flexbox ליצירת פריסה גמישה.</li>
+          <li>הגדרת columns ו־rows שמסתגלים לפי רוחב המסך.</li>
+        </ul>
+
+        <h3>Media Queries</h3>
+        <p>התאמת CSS לפי רוחב מסך:</p>
+        <pre dir="ltr"><code>@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+  
+  .main-content {
+    width: 100%;
+  }
+}</code></pre>
+        <p>מאפשר שינוי פריסה, גודל פונטים ותמונות בהתאם למכשיר.</p>
+
+        <h3>Fluid Layouts</h3>
+        <ul>
+          <li>
+            שימוש ב־% או vw/vh במקום פיקסלים קבועים כדי ליצור פריסה גמישה.
+          </li>
+          <li>תמונות וגופנים שמסתגלים לגודל ההורה.</li>
+        </ul>
+
+        <h3>Mobile First</h3>
+        <ul>
+          <li>כתיבת CSS מהמסך הקטן והרחבה למסכים גדולים.</li>
+          <li>מונע קוד מיותר ויוצר חוויית משתמש יעילה במובייל.</li>
+        </ul>
+
+        <h3>Test Across Devices</h3>
+        <ul>
+          <li>בדיקות על מספר דפדפנים ומכשירים.</li>
+          <li>שימוש ב־DevTools לדמות גדלים שונים ולוודא שהפריסה נשמרת.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>טיפים למימוש יעיל</h2>
+        <ul>
+          <li>להשתמש ב־CSS Variables לסטיילינג אחיד בין מסכים.</li>
+          <li>
+            לשלב Unit Tests ו־Visual Regression Tests כדי לוודא שהעיצוב נשמר.
+          </li>
+          <li>להימנע מתוכן קבוע או רוחב פיקסלי שאינו מסתגל למסך.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          Responsive Design הוא חלק בלתי נפרד מכל אפליקציית React מודרנית. יישום
+          נכון של Grid, Media Queries, Fluid Layout ו־Mobile First מאפשר חוויית
+          משתמש אחידה, גמישה ומקצועית בכל מכשיר.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Pagination & Infinite Scroll – טעינה חלקית של נתונים גדולים - React
+      Project Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Pagination & Infinite Scroll – טעינה חלקית של נתונים גדולים</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה Pagination ו־Infinite Scroll חשובים?</h2>
+        <p>
+          בפיתוח React, כאשר עובדים עם רשימות או טבלאות גדולות של נתונים, טעינה
+          מלאה של כל הנתונים יכולה לפגוע בביצועים ולהכביד על ה‑UI. שיטות כמו
+          Pagination ו‑Infinite Scroll מאפשרות טעינה הדרגתית של הנתונים בצורה
+          חלקה ויעילה.
+        </p>
+        <ul>
+          <li>מונע עומס על השרת והדפדפן.</li>
+          <li>משפר חוויית משתמש עם זמני טעינה מהירים יותר.</li>
+          <li>מאפשר ניהול state ו‑cache יעיל יותר עבור נתונים גדולים.</li>
+          <li>מאפשר שילוב עם API, React Query, SWR או Redux בצורה חלקה.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>שיטות עיקריות</h2>
+        <h3>1. Pagination (דפי תצוגה)</h3>
+        <p>טעינת נתונים בדפים נפרדים עם navigation בין הדפים.</p>
+        <p>קל למימוש, מאפשר שליטה מלאה בכמות הנתונים שמוצגת.</p>
+        <p>דוגמה בסיסית:</p>
+        <pre dir="ltr"><code>import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+
+function UsersPagination() {
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['users', page],
+    queryFn: () => 
+      fetch(`/api/users?page=${page}&limit=${pageSize}`)
+        .then(res => res.json()),
+    keepPreviousData: true, // Keep previous data while loading new page
+  });
+
+  if (isLoading && !data) return &lt;div&gt;Loading...&lt;/div&gt;;
+  if (error) return &lt;div&gt;Error: {error.message}&lt;/div&gt;;
+
+  const { users, totalPages, currentPage } = data;
+
+  return (
+    &lt;div&gt;
+      &lt;ul&gt;
+        {users.map(user =&gt; (
+          &lt;li key={user.id}&gt;{user.name}&lt;/li&gt;
+        ))}
+      &lt;/ul&gt;
+      
+      &lt;div className="pagination"&gt;
+        &lt;button 
+          onClick={() =&gt; setPage(prev =&gt; Math.max(prev - 1, 1))} 
+          disabled={currentPage === 1}
+        &gt;
+          Previous
+        &lt;/button&gt;
+        
+        &lt;span&gt;Page {currentPage} of {totalPages}&lt;/span&gt;
+        
+        &lt;button 
+          onClick={() =&gt; setPage(prev =&gt; Math.min(prev + 1, totalPages))} 
+          disabled={currentPage === totalPages}
+        &gt;
+          Next
+        &lt;/button&gt;
+      &lt;/div&gt;
+      
+      {isLoading && &lt;div&gt;Loading new page...&lt;/div&gt;}
+    &lt;/div&gt;
+  );
+}</code></pre>
+
+        <h3>2. Infinite Scroll (גלילה אינסופית)</h3>
+        <p>טעינת נתונים נוספים בעת גלילה למטה או הגעה לתחתית הרשימה.</p>
+        <p>חוויית משתמש חלקה כמו ברשתות חברתיות.</p>
+        <p>דוגמה בסיסית עם Intersection Observer:</p>
+        <pre
+          dir="ltr"
+        ><code>import React, { useState, useCallback, useRef } from 'react';
+
+function InfiniteScrollUsers() {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(1);
+
+  const observer = useRef();
+  
+  const lastUserElementRef = useCallback(node => {
+    if (loading) return;
+    if (observer.current) observer.current.disconnect();
+    
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        loadMore();
+      }
+    });
+    
+    if (node) observer.current.observe(node);
+  }, [loading, hasMore]);
+
+  const loadMore = useCallback(async () => {
+    if (loading) return;
+    
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/users?page=${page}&limit=20`);
+      const data = await response.json();
+      
+      setUsers(prev => [...prev, ...data.users]);
+      setPage(prev => prev + 1);
+      setHasMore(data.users.length > 0);
+    } catch (error) {
+      console.error('Error loading more users:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, loading]);
+
+  return (
+    &lt;div&gt;
+      &lt;ul&gt;
+        {users.map((user, index) => {
+          // Attach ref to the last element
+          if (users.length === index + 1) {
+            return (
+              &lt;li ref={lastUserElementRef} key={user.id}&gt;
+                {user.name}
+              &lt;/li&gt;
+            );
+          } else {
+            return &lt;li key={user.id}&gt;{user.name}&lt;/li&gt;;
+          }
+        })}
+      &lt;/ul&gt;
+      
+      {loading && &lt;div&gt;Loading more users...&lt;/div&gt;}
+      {!hasMore && &lt;div&gt;No more users to load&lt;/div&gt;}
+    &lt;/div&gt;
+  );
+}</code></pre>
+
+        <h3>3. שילוב עם React Query / SWR</h3>
+        <p>
+          React Query מאפשר useInfiniteQuery לניהול Infinite Scroll בצורה
+          מתקדמת:
+        </p>
+        <pre
+          dir="ltr"
+        ><code>import { useInfiniteQuery } from '@tanstack/react-query';
+
+function InfiniteUsersWithReactQuery() {
+  const {
+    data,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetching,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ['users'],
+    queryFn: ({ pageParam = 1 }) => 
+      fetch(`/api/users?page=${pageParam}&limit=20`)
+        .then(res => res.json()),
+    getNextPageParam: (lastPage, pages) => {
+      return lastPage.hasMore ? pages.length + 1 : undefined;
+    },
+  });
+
+  const users = data?.pages.flatMap(page => page.users) ?? [];
+
+  return (
+    &lt;div&gt;
+      &lt;ul&gt;
+        {users.map(user => (
+          &lt;li key={user.id}&gt;{user.name}&lt;/li&gt;
+        ))}
+      &lt;/ul&gt;
+      
+      &lt;button
+        onClick={() => fetchNextPage()}
+        disabled={!hasNextPage || isFetchingNextPage}
+      &gt;
+        {isFetchingNextPage
+          ? 'Loading more...'
+          : hasNextPage
+          ? 'Load More'
+          : 'Nothing more to load'}
+      &lt;/button&gt;
+      
+      {isFetching && !isFetchingNextPage ? 'Background Updating...' : null}
+    &lt;/div&gt;
+  );
+}
+
+// SWR Infinite
+import useSWRInfinite from 'swr/infinite';
+
+function InfiniteUsersWithSWR() {
+  const getKey = (pageIndex, previousPageData) => {
+    if (previousPageData && !previousPageData.users.length) return null;
+    return `/api/users?page=${pageIndex + 1}&limit=20`;
+  };
+
+  const { data, error, mutate, size, setSize, isValidating } = useSWRInfinite(
+    getKey,
+    url => fetch(url).then(res => res.json())
+  );
+
+  const users = data ? data.flatMap(page => page.users) : [];
+  const isLoadingMore = isValidating && data && typeof data[size - 1] === 'undefined';
+  const isEmpty = data?.[0]?.users?.length === 0;
+  const isReachingEnd = isEmpty || (data && data[data.length - 1]?.users?.length < 20);
+
+  return (
+    &lt;div&gt;
+      &lt;ul&gt;
+        {users.map(user => (
+          &lt;li key={user.id}&gt;{user.name}&lt;/li&gt;
+        ))}
+      &lt;/ul&gt;
+      
+      &lt;button
+        disabled={isLoadingMore || isReachingEnd}
+        onClick={() => setSize(size + 1)}
+      &gt;
+        {isLoadingMore
+          ? 'Loading...'
+          : isReachingEnd
+          ? 'No more data'
+          : 'Load more'}
+      &lt;/button&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>Custom Hook לניהול Infinite Scroll</h2>
+        <pre
+          dir="ltr"
+        ><code>import { useState, useEffect, useCallback } from 'react';
+
+function useInfiniteScroll(fetchMore, hasMore) {
+  const [loading, setLoading] = useState(false);
+
+  const handleScroll = useCallback(() => {
+    if (loading || !hasMore) return;
+
+    if (window.innerHeight + document.documentElement.scrollTop 
+        !== document.documentElement.offsetHeight) return;
+
+    setLoading(true);
+    fetchMore().finally(() => setLoading(false));
+  }, [fetchMore, hasMore, loading]);
+
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
+
+  return { loading };
+}
+
+// Usage
+function UsersListWithCustomHook() {
+  const [users, setUsers] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+
+  const fetchMore = useCallback(async () => {
+    const response = await fetch(`/api/users?page=${page}&limit=20`);
+    const data = await response.json();
+    
+    setUsers(prev => [...prev, ...data.users]);
+    setPage(prev => prev + 1);
+    setHasMore(data.users.length === 20);
+  }, [page]);
+
+  const { loading } = useInfiniteScroll(fetchMore, hasMore);
+
+  return (
+    &lt;div&gt;
+      &lt;ul&gt;
+        {users.map(user => (
+          &lt;li key={user.id}&gt;{user.name}&lt;/li&gt;
+        ))}
+      &lt;/ul&gt;
+      {loading && &lt;div&gt;Loading more...&lt;/div&gt;}
+    &lt;/div&gt;
+  );
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>טיפים למימוש יעיל</h2>
+        <ul>
+          <li>להגדיר גודל עמוד מתאים כדי לא להכביד על UI והשרת.</li>
+          <li>למנוע קריאות חוזרות מיותרות על ידי caching ו‑memoization.</li>
+          <li>לשלב loading indicators ושגיאות כדי לשמור חוויית משתמש טובה.</li>
+          <li>
+            ב‑Infinite Scroll, לחשוב על מקרים של נתונים דינמיים שמתעדכנים בזמן
+            אמת.
+          </li>
+          <li>
+            להשתמש ב־Virtualization עבור רשימות ארוכות מאוד לשיפור ביצועים.
+          </li>
+          <li>לשמור על state נקי ולנקות listeners בעת unmount.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          Pagination ו‑Infinite Scroll מאפשרים טעינה חלקית של נתונים גדולים
+          בצורה יעילה ואופטימלית. בחירה נכונה בין שתי השיטות תלויה בצורת השימוש,
+          חוויית המשתמש ויכולת השרת להתמודד עם קריאות חוזרות.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

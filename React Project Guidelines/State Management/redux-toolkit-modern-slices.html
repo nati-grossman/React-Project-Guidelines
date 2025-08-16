@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Redux Toolkit – שימוש במבנה מודרני (slices) - React Project Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Redux Toolkit – שימוש במבנה מודרני (slices)</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה RTK?</h2>
+        <p>
+          Redux תמיד היה פתרון חזק ל־state גלובלי, אך בעבר דרש הרבה boilerplate
+          (Actions/Reducers/Types נפרדים). עם Redux Toolkit (RTK) מקבלים פחות
+          קוד, מבנה ברור ופיצ׳ר מרכזי: <strong>Slices</strong>.
+        </p>
+      </section>
+
+      <section class="category">
+        <h2>מה זה Slice?</h2>
+        <p>
+          אפשר לחשוב על <strong>Slice</strong> כעל "מודול פיצ׳ר" שמרכז את כל מה
+          שהפיצ׳ר צריך כדי לנהל State: שם, מצב התחלתי, פונקציות שינוי מצב,
+          ו־actions שנוצרים אוטומטית. המטרה היא לצמצם פיזור קוד ולחבר בין
+          הלוגיקה ל־state שאותה היא משנה.
+        </p>
+        <ul>
+          <li>
+            <strong>name</strong>: שם המודול. נכנס כקידומת לזיהוי סוגי
+            ה־actions.
+          </li>
+          <li>
+            <strong>initialState</strong>: המבנה והערכים ההתחלתיים של ה־state.
+          </li>
+          <li>
+            <strong>reducers</strong>: פונקציות שמתארות איך ה־state משתנה בתגובה
+            לאירועים.
+          </li>
+          <li>
+            <strong>actions</strong>: נבנים אוטומטית עבור כל reducer (אין צורך
+            להגדיר ידנית).
+          </li>
+          <li>
+            <strong>reducer</strong>: הפונקציה שמחברת את הכל ונרשמת ל־store.
+          </li>
+        </ul>
+        <p>
+          מאחורי הקלעים RTK משתמשת ב־<strong>Immer</strong>, ולכן מותר לכתוב
+          <em>תחביר "משנה"</em> (כמו <code>state.value += 1</code>) והוא יתורגם
+          לעדכון אימוטבילי בצורה בטוחה. זה עושה את הלוגיקה קצרה וברורה.
+        </p>
+        <p>
+          מודל החשיבה: "לכל פיצ׳ר יש מחסנית־מצב קטנה, עם סט פעולות שמותרות עליו
+          ומייצרות Actions אוטומטית". כך הפיצ׳ר הופך לעצמאי, קל לבדיקה
+          וקונסיסטנטי.
+        </p>
+        <pre
+          dir="ltr"
+        ><code>import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+
+interface CounterState {
+  value: number;
+}
+
+const initialState: CounterState = { value: 0 };
+
+const counterSlice = createSlice({
+  name: 'counter',
+  initialState,
+  reducers: {
+    increment: (state) =&gt; { state.value += 1; },
+    decrement: (state) =&gt; { state.value -= 1; },
+    incrementByAmount: (state, action: PayloadAction&lt;number&gt;) =&gt; {
+      state.value += action.payload;
+    }
+  }
+});
+
+export const { increment, decrement, incrementByAmount } = counterSlice.actions;
+export default counterSlice.reducer;</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>איך זה שונה מרדאקס "קלאסי"?</h2>
+        <ul>
+          <li>
+            <strong>פחות קבצים</strong>: אין צורך להפריד types/actions/reducers.
+          </li>
+          <li><strong>Actions אוטומטיים</strong>: נבנים מתוך ה־reducers.</li>
+          <li>
+            <strong>עדכונים אימוטביליים פשוטים</strong>: בזכות Immer כותבים קוד
+            קצר וברור.
+          </li>
+          <li>
+            <strong>יישור לפיצ׳רים</strong>: כל Slice חי בתיקיית הפיצ׳ר, משתלב
+            יפה עם Feature‑Based Structure.
+          </li>
+          <li>
+            <strong>תמיכה ב־async</strong>: באמצעות
+            <code>createAsyncThunk</code> ו־<code>extraReducers</code> לעדכון
+            סטטוסים.
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>למה זה טוב?</h2>
+        <ul>
+          <li><strong>קוד קצר ונקי</strong>: פחות קבצים והגדרות.</li>
+          <li>
+            <strong>פיצ׳ר־אוריינטד</strong>: מתאים ל־Feature-Based Structure.
+          </li>
+          <li>
+            <strong>TypeScript-Friendly</strong>: טיפוסים מובנים במינימום
+            boilerplate.
+          </li>
+          <li>
+            <strong>קל עם Thunks</strong>: לוגיקה אסינכרונית בתוך ה־Slice.
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>מבנה מודרני בפרויקט</h2>
+        <pre dir="ltr"><code>src/
+├─ features/
+│  └─ counter/
+│     ├─ counterSlice.ts
+│     ├─ Counter.tsx
+│     └─ hooks.ts
+└─ store/
+   └─ index.ts</code></pre>
+        <ul>
+          <li><strong>counterSlice.ts</strong>: state ולוגיקה של הפיצ׳ר.</li>
+          <li><strong>Counter.tsx</strong>: הקומפוננטה שמציגה את הנתונים.</li>
+          <li><strong>hooks.ts</strong>: Hooks מותאמים ל־selector/dispatch.</li>
+        </ul>
+        <h3>Store והטמעה</h3>
+        <pre dir="ltr"><code>// store/index.ts
+import { configureStore } from '@reduxjs/toolkit';
+import counterReducer from '../features/counter/counterSlice';
+
+export const store = configureStore({
+  reducer: { counter: counterReducer }
+});
+
+export type RootState = ReturnType&lt;typeof store.getState&gt;;
+export type AppDispatch = typeof store.dispatch;</code></pre>
+        <pre dir="ltr"><code>// main.tsx
+import { Provider } from 'react-redux';
+import { store } from './store';
+
+&lt;Provider store={store}&gt;
+  &lt;App /&gt;
+&lt;/Provider&gt;</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>טיפים לשימוש נכון</h2>
+        <ul>
+          <li>שמרו כל Slice בתיקיית הפיצ׳ר שלו.</li>
+          <li>אל תיצרו Slice ענק לכל האפליקציה — חלקו לפי תחומים.</li>
+          <li>
+            השתמשו ב־<code>createAsyncThunk</code> עבור לוגיקה אסינכרונית.
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <ul>
+          <li>פחות קוד מיותר.</li>
+          <li>מבנה ברור לפי פיצ׳רים.</li>
+          <li>תמיכה מצוינת ב־TypeScript.</li>
+        </ul>
+        <p>RTK מביא את Redux למאה ה־21 והופך ניהול state גלובלי לפשוט וקריא.</p>
+      </section>
+    </main>
+  </body>
+</html>

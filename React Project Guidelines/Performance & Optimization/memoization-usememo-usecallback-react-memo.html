@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Memoization ב־React: useMemo, useCallback ו־React.memo - React Project
+      Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Memoization ב־React: useMemo, useCallback ו־React.memo</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה Memoization?</h2>
+        <p>
+          כל שינוי ב־state/props יוצר רינדור. לרוב זה מצוין, אך בחישובים כבדים
+          או קומפוננטות גדולות זה עלול לעלות בביצועים. Memoization שומרת תוצאות
+          או פונקציות כדי להימנע מחישובים ורינדורים מיותרים.
+        </p>
+      </section>
+
+      <section class="category">
+        <h2>useMemo — שמירה על תוצאה מחושבת</h2>
+        <p>
+          שומרת תוצאה ומחזירה אותה כל עוד התלויות לא השתנו. מתאים לעיבוד נתונים
+          יקר.
+        </p>
+        <pre dir="ltr"><code>const filteredUsers = useMemo(() =&gt; {
+  return users.filter(u =&gt; u.active);
+}, [users]);</code></pre>
+        <p>החישוב יתבצע רק כשה־<code>users</code> משתנה.</p>
+      </section>
+
+      <section class="category">
+        <h2>useCallback — שמירה על פונקציה</h2>
+        <p>
+          מחזירה אותה פונקציה (ב־reference) בין רינדורים כל עוד התלויות לא
+          השתנו. שימושי כשמעבירים פונקציות ל־React.memo.
+        </p>
+        <pre dir="ltr"><code>const handleClick = useCallback(() =&gt; {
+  console.log('Clicked');
+}, []);</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>React.memo — מניעת רינדור של קומפוננטה</h2>
+        <p>עוטף קומפוננטה פונקציונלית ומונע רינדור אם ה־props לא השתנו.</p>
+        <pre dir="ltr"><code>const UserCard = React.memo(({ user }) =&gt; {
+  return &lt;div&gt;{user.name}&lt;/div&gt;;
+});</code></pre>
+        <p>אם ה־<code>user</code> נשאר זהה (reference), לא יהיה רינדור מחדש.</p>
+      </section>
+
+      <section class="category">
+        <h2>איך זה עובד יחד?</h2>
+        <ul>
+          <li><strong>React.memo</strong>: עוצר רינדור כשאין שינוי ב־props.</li>
+          <li>
+            <strong>useCallback</strong>: מונע שינוי reference של פונקציות
+            שמועברות ל־child.
+          </li>
+          <li>
+            <strong>useMemo</strong>: מונע חישובים מיותרים ויצירת
+            אובייקטים/מחרוזות/מערכים חדשים.
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>מתי להשתמש?</h2>
+        <ul>
+          <li>חישובים כבדים שחוזרים בכל רינדור.</li>
+          <li>קומפוננטות שמקבלות props שמיוצרים מחדש כל פעם.</li>
+          <li>העברת פונקציות/אובייקטים לעומק העץ.</li>
+        </ul>
+        <h3>מתי לא?</h3>
+        <ul>
+          <li>קומפוננטות פשוטות — עלול להיות Overkill.</li>
+          <li>כאשר אין בעיית ביצועים — זה מוסיף מורכבות מיותרת.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          Memoization היא כמו “פתק עם תשובה” — במקום לחשב מחדש בכל פעם. השתמשו
+          ב־<code>useMemo</code>,
+          <code>useCallback</code> ו־<code>React.memo</code> בחכמה, רק היכן שזה
+          באמת משפיע.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

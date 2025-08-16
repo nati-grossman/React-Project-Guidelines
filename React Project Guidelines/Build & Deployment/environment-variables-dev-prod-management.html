@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Environment Variables – ניהול משתנים עבור dev / prod - React Project
+      Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Environment Variables – ניהול משתנים עבור dev / prod</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה Environment Variables חשובים?</h2>
+        <p>
+          בפיתוח אפליקציות React, לעיתים יש צורך לשמור מידע שמשתנה בין סביבות
+          שונות: כתובות API, מפתחות צד שלישי, תצורה שונה ל‑development
+          ו‑production ועוד. Environment Variables מאפשרים לנהל מידע כזה בצורה
+          מסודרת ובטוחה.
+        </p>
+        <ul>
+          <li>מפריד בין קוד לבין תצורה, מה שמקל על תחזוקה ושינוי סביבות.</li>
+          <li>מונע חשיפת מידע רגיש בקוד המקור.</li>
+          <li>
+            מאפשר הפעלה של האפליקציה בסביבות שונות (dev, staging, prod) עם אותו
+            קוד בסיסי.
+          </li>
+          <li>משפר עקביות ובקרה על משתנים קריטיים.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>איך זה עובד</h2>
+        <h3>1. יצירת קובצי .env</h3>
+        <p>React תומך בקובצי .env בספריית השורש של הפרויקט:</p>
+        <pre dir="ltr"><code># .env (default environment variables)
+REACT_APP_API_URL=https://api.example.com
+REACT_APP_APP_NAME=My React App
+REACT_APP_DEBUG=false
+
+# .env.local (local overrides - not committed to git)
+REACT_APP_API_URL=http://localhost:3001
+REACT_APP_DEBUG=true
+
+# .env.development (development environment)
+REACT_APP_API_URL=https://api.dev.example.com
+REACT_APP_GOOGLE_ANALYTICS_ID=GA-DEV-12345
+REACT_APP_DEBUG=true
+REACT_APP_LOG_LEVEL=debug
+
+# .env.staging (staging environment)  
+REACT_APP_API_URL=https://api.staging.example.com
+REACT_APP_GOOGLE_ANALYTICS_ID=GA-STAGING-12345
+REACT_APP_DEBUG=false
+REACT_APP_LOG_LEVEL=warn
+
+# .env.production (production environment)
+REACT_APP_API_URL=https://api.example.com
+REACT_APP_GOOGLE_ANALYTICS_ID=GA-PROD-12345
+REACT_APP_DEBUG=false
+REACT_APP_LOG_LEVEL=error
+
+# הערה חשובה: כל משתנה חייב להתחיל ב‑REACT_APP_ כדי להיות נגיש ב‑React</code></pre>
+
+        <h3>2. Loading Priority</h3>
+        <p>React טוען קובצי .env לפי סדר עדיפויות:</p>
+        <pre dir="ltr"><code>// Loading order (higher priority overrides lower):
+// 1. .env.local
+// 2. .env.development, .env.staging, .env.production (based on NODE_ENV)
+// 3. .env
+
+// Example of environment-specific loading:
+// npm start (NODE_ENV=development):
+//   .env.local → .env.development → .env
+
+// npm run build (NODE_ENV=production):
+//   .env.local → .env.production → .env</code></pre>
+
+        <h3>3. גישה למשתנים בקוד</h3>
+        <pre dir="ltr"><code>// Basic usage
+const apiUrl = process.env.REACT_APP_API_URL;
+const isDebug = process.env.REACT_APP_DEBUG === 'true';
+
+// Creating a configuration object
+// src/config/index.js
+class Config {
+  static get API_URL() {
+    return process.env.REACT_APP_API_URL || 'http://localhost:3001';
+  }
+
+  static get GOOGLE_ANALYTICS_ID() {
+    return process.env.REACT_APP_GOOGLE_ANALYTICS_ID;
+  }
+
+  static get DEBUG() {
+    return process.env.REACT_APP_DEBUG === 'true';
+  }
+
+  static get LOG_LEVEL() {
+    return process.env.REACT_APP_LOG_LEVEL || 'info';
+  }
+
+  static get ENVIRONMENT() {
+    return process.env.NODE_ENV || 'development';
+  }
+
+  static get APP_VERSION() {
+    return process.env.REACT_APP_VERSION || '1.0.0';
+  }
+
+  // Feature flags
+  static get FEATURE_ANALYTICS_ENABLED() {
+    return process.env.REACT_APP_FEATURE_ANALYTICS === 'true';
+  }
+
+  static get FEATURE_NEW_UI_ENABLED() {
+    return process.env.REACT_APP_FEATURE_NEW_UI === 'true';
+  }
+}
+
+export default Config;
+
+// Usage in components
+import Config from '../config';
+
+function ApiService() {
+  const fetchUsers = async () => {
+    const response = await fetch(`${Config.API_URL}/users`);
+    return response.json();
+  };
+
+  return { fetchUsers };
+}
+
+function App() {
+  useEffect(() => {
+    if (Config.GOOGLE_ANALYTICS_ID) {
+      // Initialize Google Analytics
+      gtag('config', Config.GOOGLE_ANALYTICS_ID);
+    }
+  }, []);
+
+  if (Config.DEBUG) {
+    console.log('Debug mode enabled');
+  }
+
+  return (
+    &lt;div&gt;
+      &lt;h1&gt;{process.env.REACT_APP_APP_NAME}&lt;/h1&gt;
+      {Config.FEATURE_NEW_UI_ENABLED && &lt;NewUIComponent /&gt;}
+    &lt;/div&gt;
+  );
+}</code></pre>
+
+        <h3>4. TypeScript Support</h3>
+        <pre dir="ltr"><code>// src/types/env.d.ts
+declare namespace NodeJS {
+  interface ProcessEnv {
+    readonly NODE_ENV: 'development' | 'production' | 'test';
+    readonly REACT_APP_API_URL: string;
+    readonly REACT_APP_GOOGLE_ANALYTICS_ID?: string;
+    readonly REACT_APP_DEBUG: 'true' | 'false';
+    readonly REACT_APP_LOG_LEVEL: 'debug' | 'info' | 'warn' | 'error';
+    readonly REACT_APP_APP_NAME: string;
+    readonly REACT_APP_VERSION: string;
+    readonly REACT_APP_FEATURE_ANALYTICS: 'true' | 'false';
+    readonly REACT_APP_FEATURE_NEW_UI: 'true' | 'false';
+  }
+}
+
+// Enhanced config with TypeScript
+// src/config/index.ts
+interface AppConfig {
+  API_URL: string;
+  GOOGLE_ANALYTICS_ID?: string;
+  DEBUG: boolean;
+  LOG_LEVEL: 'debug' | 'info' | 'warn' | 'error';
+  ENVIRONMENT: 'development' | 'production' | 'test';
+  APP_NAME: string;
+  APP_VERSION: string;
+  FEATURES: {
+    ANALYTICS_ENABLED: boolean;
+    NEW_UI_ENABLED: boolean;
+  };
+}
+
+class Config implements AppConfig {
+  static get API_URL(): string {
+    const url = process.env.REACT_APP_API_URL;
+    if (!url) {
+      throw new Error('REACT_APP_API_URL is not defined');
+    }
+    return url;
+  }
+
+  static get GOOGLE_ANALYTICS_ID(): string | undefined {
+    return process.env.REACT_APP_GOOGLE_ANALYTICS_ID;
+  }
+
+  static get DEBUG(): boolean {
+    return process.env.REACT_APP_DEBUG === 'true';
+  }
+
+  static get LOG_LEVEL(): 'debug' | 'info' | 'warn' | 'error' {
+    const level = process.env.REACT_APP_LOG_LEVEL;
+    return ['debug', 'info', 'warn', 'error'].includes(level) 
+      ? level as 'debug' | 'info' | 'warn' | 'error'
+      : 'info';
+  }
+
+  static get ENVIRONMENT(): 'development' | 'production' | 'test' {
+    return process.env.NODE_ENV || 'development';
+  }
+
+  static get APP_NAME(): string {
+    return process.env.REACT_APP_APP_NAME || 'React App';
+  }
+
+  static get APP_VERSION(): string {
+    return process.env.REACT_APP_VERSION || '1.0.0';
+  }
+
+  static get FEATURES() {
+    return {
+      ANALYTICS_ENABLED: process.env.REACT_APP_FEATURE_ANALYTICS === 'true',
+      NEW_UI_ENABLED: process.env.REACT_APP_FEATURE_NEW_UI === 'true',
+    };
+  }
+
+  // Validation method
+  static validate(): void {
+    const requiredVars = [
+      'REACT_APP_API_URL',
+      'REACT_APP_APP_NAME',
+    ];
+
+    const missing = requiredVars.filter(
+      varName => !process.env[varName]
+    );
+
+    if (missing.length > 0) {
+      throw new Error(
+        `Missing required environment variables: ${missing.join(', ')}`
+      );
+    }
+  }
+}
+
+export default Config;</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>אבטחה ו-Best Practices</h2>
+        <h3>1. .gitignore Configuration</h3>
+        <pre dir="ltr"><code># .gitignore
+# Environment variables
+.env.local
+.env.*.local
+
+# Usually committed (no sensitive data):
+# .env
+# .env.development  
+# .env.staging
+# .env.production
+
+# Never commit files with real secrets:
+.env.secrets
+.env.keys
+*.key
+*.pem</code></pre>
+
+        <h3>2. Secrets Management</h3>
+        <pre dir="ltr"><code>// ❌ רע - sensitive data in environment variables
+REACT_APP_SECRET_KEY=super-secret-key-123
+REACT_APP_PRIVATE_API_KEY=private-key-456
+
+// ✅ טוב - only public/client-side safe variables
+REACT_APP_API_URL=https://api.example.com
+REACT_APP_PUBLIC_KEY=public-key-789
+REACT_APP_GOOGLE_MAPS_API_KEY=maps-api-key
+
+// For sensitive data, use server-side environment variables
+// and proxy through your backend API
+
+// src/services/auth.js
+class AuthService {
+  // ❌ רע - client-side secret
+  static getToken() {
+    return process.env.REACT_APP_SECRET_TOKEN;
+  }
+
+  // ✅ טוב - get token from secure endpoint
+  static async getToken() {
+    const response = await fetch('/api/auth/token', {
+      credentials: 'include',
+    });
+    return response.json();
+  }
+}
+
+// Environment variable validation
+// src/utils/validateEnv.js
+export function validateEnvironment() {
+  const errors = [];
+
+  // Check required variables
+  if (!process.env.REACT_APP_API_URL) {
+    errors.push('REACT_APP_API_URL is required');
+  }
+
+  // Validate URL format
+  if (process.env.REACT_APP_API_URL) {
+    try {
+      new URL(process.env.REACT_APP_API_URL);
+    } catch {
+      errors.push('REACT_APP_API_URL must be a valid URL');
+    }
+  }
+
+  // Check for accidentally exposed secrets
+  const suspiciousPatterns = [
+    /secret/i,
+    /password/i,
+    /private.*key/i,
+    /token.*[a-f0-9]{20,}/i,
+  ];
+
+  Object.keys(process.env).forEach(key => {
+    if (key.startsWith('REACT_APP_')) {
+      const value = process.env[key];
+      suspiciousPatterns.forEach(pattern => {
+        if (pattern.test(key) || pattern.test(value)) {
+          console.warn(`⚠️ Potentially sensitive data in ${key}`);
+        }
+      });
+    }
+  });
+
+  if (errors.length > 0) {
+    throw new Error(`Environment validation failed:\n${errors.join('\n')}`);
+  }
+}</code></pre>
+
+        <h3>3. Runtime Environment Detection</h3>
+        <pre dir="ltr"><code>// src/utils/environment.js
+export class Environment {
+  static get isDevelopment() {
+    return process.env.NODE_ENV === 'development';
+  }
+
+  static get isProduction() {
+    return process.env.NODE_ENV === 'production';
+  }
+
+  static get isTest() {
+    return process.env.NODE_ENV === 'test';
+  }
+
+  static get isLocal() {
+    return window.location.hostname === 'localhost' || 
+           window.location.hostname === '127.0.0.1';
+  }
+
+  static get buildInfo() {
+    return {
+      version: process.env.REACT_APP_VERSION,
+      buildTime: process.env.REACT_APP_BUILD_TIME,
+      gitCommit: process.env.REACT_APP_GIT_COMMIT,
+      environment: process.env.NODE_ENV,
+    };
+  }
+
+  static logEnvironmentInfo() {
+    if (this.isDevelopment) {
+      console.group('🔧 Environment Info');
+      console.log('Environment:', process.env.NODE_ENV);
+      console.log('API URL:', process.env.REACT_APP_API_URL);
+      console.log('Debug Mode:', process.env.REACT_APP_DEBUG);
+      console.log('Build Info:', this.buildInfo);
+      console.groupEnd();
+    }
+  }
+}
+
+// Feature flags based on environment
+export class FeatureFlags {
+  static get ANALYTICS_ENABLED() {
+    if (Environment.isTest) return false;
+    return process.env.REACT_APP_FEATURE_ANALYTICS === 'true';
+  }
+
+  static get DEBUG_TOOLS_ENABLED() {
+    return Environment.isDevelopment || 
+           process.env.REACT_APP_DEBUG_TOOLS === 'true';
+  }
+
+  static get EXPERIMENTAL_FEATURES() {
+    return Environment.isDevelopment && 
+           process.env.REACT_APP_EXPERIMENTAL === 'true';
+  }
+
+  static isFeatureEnabled(featureName: string): boolean {
+    const envVar = `REACT_APP_FEATURE_${featureName.toUpperCase()}`;
+    return process.env[envVar] === 'true';
+  }
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>CI/CD Integration</h2>
+        <h3>1. GitHub Actions</h3>
+        <pre dir="ltr"><code># .github/workflows/deploy.yml
+name: Build and Deploy
+on:
+  push:
+    branches: [main, develop]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [staging, production]
+        include:
+          - environment: staging
+            branch: develop
+            api_url: https://api.staging.example.com
+          - environment: production
+            branch: main
+            api_url: https://api.example.com
+
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Set environment variables
+        run: |
+          echo "REACT_APP_API_URL=${{ matrix.api_url }}" >> $GITHUB_ENV
+          echo "REACT_APP_ENVIRONMENT=${{ matrix.environment }}" >> $GITHUB_ENV
+          echo "REACT_APP_VERSION=${{ github.sha }}" >> $GITHUB_ENV
+          echo "REACT_APP_BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+      
+      - name: Build
+        run: npm run build
+        env:
+          REACT_APP_GOOGLE_ANALYTICS_ID: ${{ secrets.GOOGLE_ANALYTICS_ID }}
+          REACT_APP_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+      
+      - name: Deploy to Netlify
+        if: matrix.environment == 'staging'
+        run: netlify deploy --dir=build
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      
+      - name: Deploy to Vercel
+        if: matrix.environment == 'production'
+        run: vercel --prod
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}</code></pre>
+
+        <h3>2. Docker Support</h3>
+        <pre dir="ltr"><code># Dockerfile
+FROM node:18-alpine as builder
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+
+# Build args for environment variables
+ARG REACT_APP_API_URL
+ARG REACT_APP_GOOGLE_ANALYTICS_ID
+ARG REACT_APP_VERSION
+
+# Set environment variables
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
+ENV REACT_APP_GOOGLE_ANALYTICS_ID=$REACT_APP_GOOGLE_ANALYTICS_ID
+ENV REACT_APP_VERSION=$REACT_APP_VERSION
+
+RUN npm run build
+
+# Production image
+FROM nginx:alpine
+COPY --from=builder /app/build /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/nginx.conf
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+
+# docker-compose.yml
+version: '3.8'
+services:
+  react-app-dev:
+    build:
+      context: .
+      args:
+        REACT_APP_API_URL: http://localhost:3001
+        REACT_APP_VERSION: dev-${GITHUB_SHA:-local}
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=development
+
+  react-app-prod:
+    build:
+      context: .
+      args:
+        REACT_APP_API_URL: https://api.example.com
+        REACT_APP_VERSION: ${GITHUB_SHA}
+    ports:
+      - "80:80"
+    environment:
+      - NODE_ENV=production</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>Testing ו-Environment Variables</h2>
+        <pre dir="ltr"><code>// jest.config.js
+module.exports = {
+  setupFilesAfterEnv: ['&lt;rootDir&gt;/src/setupTests.js'],
+  testEnvironment: 'jsdom',
+  setupFiles: ['&lt;rootDir&gt;/src/setupEnv.js'],
+};
+
+// src/setupEnv.js - Test environment setup
+process.env.REACT_APP_API_URL = 'http://localhost:3001';
+process.env.REACT_APP_DEBUG = 'true';
+process.env.REACT_APP_LOG_LEVEL = 'debug';
+
+// src/__tests__/config.test.js
+import Config from '../config';
+
+// Mock environment variables for testing
+const originalEnv = process.env;
+
+beforeEach(() => {
+  jest.resetModules();
+  process.env = { ...originalEnv };
+});
+
+afterEach(() => {
+  process.env = originalEnv;
+});
+
+describe('Config', () => {
+  test('should use default API URL when not set', () => {
+    delete process.env.REACT_APP_API_URL;
+    expect(() => Config.API_URL).toThrow('REACT_APP_API_URL is not defined');
+  });
+
+  test('should parse debug flag correctly', () => {
+    process.env.REACT_APP_DEBUG = 'true';
+    expect(Config.DEBUG).toBe(true);
+
+    process.env.REACT_APP_DEBUG = 'false';
+    expect(Config.DEBUG).toBe(false);
+  });
+
+  test('should validate environment variables', () => {
+    process.env.REACT_APP_API_URL = 'invalid-url';
+    expect(() => Config.validate()).toThrow();
+
+    process.env.REACT_APP_API_URL = 'https://api.example.com';
+    expect(() => Config.validate()).not.toThrow();
+  });
+});
+
+// Integration tests with different environments
+// src/__tests__/app.integration.test.js
+describe('App Integration Tests', () => {
+  test('should configure analytics in production', () => {
+    process.env.NODE_ENV = 'production';
+    process.env.REACT_APP_GOOGLE_ANALYTICS_ID = 'GA-123456';
+    
+    // Test analytics initialization
+    // ...
+  });
+
+  test('should enable debug tools in development', () => {
+    process.env.NODE_ENV = 'development';
+    process.env.REACT_APP_DEBUG = 'true';
+    
+    // Test debug tools availability
+    // ...
+  });
+});</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>Advanced Patterns</h2>
+        <h3>1. Dynamic Configuration Loading</h3>
+        <pre dir="ltr"><code>// src/config/dynamicConfig.js
+class DynamicConfig {
+  constructor() {
+    this.config = null;
+    this.loaded = false;
+  }
+
+  async loadConfig() {
+    if (this.loaded) return this.config;
+
+    try {
+      // Load configuration from API
+      const response = await fetch('/api/config');
+      const serverConfig = await response.json();
+
+      // Merge with environment variables
+      this.config = {
+        ...this.getStaticConfig(),
+        ...serverConfig,
+      };
+
+      this.loaded = true;
+      return this.config;
+    } catch (error) {
+      console.warn('Failed to load dynamic config, using static config');
+      this.config = this.getStaticConfig();
+      this.loaded = true;
+      return this.config;
+    }
+  }
+
+  getStaticConfig() {
+    return {
+      apiUrl: process.env.REACT_APP_API_URL,
+      debug: process.env.REACT_APP_DEBUG === 'true',
+      version: process.env.REACT_APP_VERSION,
+      features: {
+        analytics: process.env.REACT_APP_FEATURE_ANALYTICS === 'true',
+        newUI: process.env.REACT_APP_FEATURE_NEW_UI === 'true',
+      },
+    };
+  }
+
+  get(key, defaultValue) {
+    if (!this.loaded) {
+      console.warn('Config not loaded yet, using environment variables');
+      return process.env[`REACT_APP_${key.toUpperCase()}`] || defaultValue;
+    }
+    
+    return this.config[key] || defaultValue;
+  }
+}
+
+export const dynamicConfig = new DynamicConfig();
+
+// Usage with React Hook
+// src/hooks/useConfig.js
+import { useState, useEffect } from 'react';
+import { dynamicConfig } from '../config/dynamicConfig';
+
+export function useConfig() {
+  const [config, setConfig] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    dynamicConfig
+      .loadConfig()
+      .then(setConfig)
+      .catch(setError)
+      .finally(() => setLoading(false));
+  }, []);
+
+  return { config, loading, error };
+}
+
+// Component usage
+function App() {
+  const { config, loading, error } = useConfig();
+
+  if (loading) return &lt;div&gt;Loading configuration...&lt;/div&gt;;
+  if (error) return &lt;div&gt;Configuration error: {error.message}&lt;/div&gt;;
+
+  return (
+    &lt;div&gt;
+      &lt;h1&gt;{config.appName}&lt;/h1&gt;
+      {config.features.newUI && &lt;NewUIComponent /&gt;}
+    &lt;/div&gt;
+  );
+}</code></pre>
+
+        <h3>2. Environment-Specific Components</h3>
+        <pre dir="ltr"><code>// src/components/EnvironmentBanner.js
+import Config from '../config';
+
+function EnvironmentBanner() {
+  if (Config.ENVIRONMENT === 'production') return null;
+
+  const bannerConfig = {
+    development: {
+      color: '#2196F3',
+      text: 'Development Environment',
+    },
+    staging: {
+      color: '#FF9800',
+      text: 'Staging Environment',
+    },
+    test: {
+      color: '#9C27B0',
+      text: 'Test Environment',
+    },
+  };
+
+  const config = bannerConfig[Config.ENVIRONMENT];
+  if (!config) return null;
+
+  return (
+    &lt;div
+      style={{
+        backgroundColor: config.color,
+        color: 'white',
+        textAlign: 'center',
+        padding: '4px 8px',
+        fontSize: '12px',
+        fontWeight: 'bold',
+      }}
+    &gt;
+      {config.text} - {Config.APP_VERSION}
+    &lt;/div&gt;
+  );
+}
+
+export default EnvironmentBanner;</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>טיפים לניהול יעיל</h2>
+        <ul>
+          <li>לשמור על עקביות בשמות המשתנים בין סביבות שונות.</li>
+          <li>למנוע hardcoding של כתובות URL או מפתחות ב‑components.</li>
+          <li>להשתמש ב‑CI/CD tools לניהול secrets בסביבות פרודקשן.</li>
+          <li>לבדוק שהמשתנים נטענים נכון בכל סביבה לפני פריסה.</li>
+          <li>לא לשמור מידע רגיש בmשתני REACT_APP_ - הם חשופים בclient.</li>
+          <li>להשתמש ב-TypeScript להגדרת טיפוסים למשתני הסביבה.</li>
+          <li>לוודא שקבצי .env.local לא נשמרים ב-Git.</li>
+          <li>ליצור validation למשתני סביבה חובה.</li>
+          <li>לתעד את כל משתני הסביבה בREADME או בdocumentation.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          Environment Variables הם כלי מרכזי לניהול תצורה ואבטחת מידע באפליקציות
+          React. שימוש נכון בקבצי .env, הפרדה בין סביבות שונות, ניהול secrets
+          מתאים וvalidation נכון מאפשר הפרדה ברורה בין dev ל‑prod, מונע טעויות
+          ומקל על תחזוקה, תוך שמירה על אבטחה וגמישות.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

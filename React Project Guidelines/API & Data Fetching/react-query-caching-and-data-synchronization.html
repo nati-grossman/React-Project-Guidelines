@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      React Query / SWR – ניהול cache ו‑refetch אוטומטי - React Project
+      Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>React Query / SWR – ניהול cache ו‑refetch אוטומטי</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה React Query / SWR חשובים?</h2>
+        <p>
+          בפיתוח React, עבודה עם API היא חלק קריטי. כלי כמו React Query או SWR
+          מאפשרים ניהול חכם של נתונים אסינכרוניים, כולל caching, refetch אוטומטי
+          והתמודדות עם טעויות או חוסר חיבור.
+        </p>
+        <ul>
+          <li>מונע קריאות חוזרות מיותרות לשרת ומייעל ביצועים.</li>
+          <li>מאפשר שמירה על UI מעודכן בזמן אמת ללא צורך בניהול state ידני.</li>
+          <li>משפר חוויית משתמש על ידי טעינה מהירה יותר של נתונים.</li>
+          <li>מסייע בניהול טעויות ורינדורים בזמן שאין חיבור לשרת.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>איך זה עובד</h2>
+        <h3>1. React Query</h3>
+        <p>מספק hooks כמו useQuery ו־useMutation לניהול נתונים.</p>
+        <p>cache אוטומטי עם זמני חיים (stale time) ואפשרויות refetch.</p>
+        <p>דוגמה בסיסית:</p>
+        <pre dir="ltr"><code>import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
+
+function UsersList() {
+  const { data, error, isLoading } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => axios.get('/api/users').then(res => res.data),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
+  });
+
+  if (isLoading) return &lt;div&gt;Loading...&lt;/div&gt;;
+  if (error) return &lt;div&gt;Error loading users&lt;/div&gt;;
+
+  return (
+    &lt;ul&gt;
+      {data.map(user =&gt; (
+        &lt;li key={user.id}&gt;{user.name}&lt;/li&gt;
+      ))}
+    &lt;/ul&gt;
+  );
+}</code></pre>
+
+        <h3>2. SWR</h3>
+        <p>ספרייה דומה עם hook useSWR.</p>
+        <p>
+          דגש על stale-while-revalidate – מציג נתון ישן תוך כדי עדכון מהשרת.
+        </p>
+        <p>דוגמה בסיסית:</p>
+        <pre dir="ltr"><code>import useSWR from 'swr';
+import axios from 'axios';
+
+const fetcher = url =&gt; axios.get(url).then(res =&gt; res.data);
+
+function UsersList() {
+  const { data, error, isLoading } = useSWR('/api/users', fetcher, {
+    refreshInterval: 30000, // Refresh every 30 seconds
+    revalidateOnFocus: true,
+    revalidateOnReconnect: true,
+  });
+
+  if (isLoading) return &lt;div&gt;Loading...&lt;/div&gt;;
+  if (error) return &lt;div&gt;Error loading users&lt;/div&gt;;
+
+  return (
+    &lt;ul&gt;
+      {data.map(user =&gt; (
+        &lt;li key={user.id}&gt;{user.name}&lt;/li&gt;
+      ))}
+    &lt;/ul&gt;
+  );
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>יתרונות עיקריים</h2>
+        <ul>
+          <li>
+            <strong>Caching</strong> – נתונים שנשלפו נשמרים לזמן מוגדר ומונעים
+            קריאות חוזרות.
+          </li>
+          <li>
+            <strong>Refetch אוטומטי</strong> – עדכון נתונים אוטומטי בזמן מסוים
+            או לפי אירועים (focus window, reconnect).
+          </li>
+          <li>
+            <strong>Handling Errors</strong> – טיפול אוטומטי בטעויות רשת וסטטוס
+            HTTP.
+          </li>
+          <li>
+            <strong>Sync Across Components</strong> – מספר קומפוננטות המשתמשות
+            באותו query נשמרות מסונכרנות.
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>דוגמה מתקדמת – Mutations</h2>
+        <pre dir="ltr"><code>// React Query Mutation
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+function AddUserButton() {
+  const queryClient = useQueryClient();
+  
+  const mutation = useMutation({
+    mutationFn: (newUser) =&gt; 
+      axios.post('/api/users', newUser).then(res =&gt; res.data),
+    onSuccess: () =&gt; {
+      // Invalidate and refetch users list
+      queryClient.invalidateQueries(['users']);
+    },
+  });
+
+  return (
+    &lt;button
+      onClick={() =&gt; mutation.mutate({ name: 'New User', email: 'new@example.com' })}
+      disabled={mutation.isLoading}
+    &gt;
+      {mutation.isLoading ? 'Adding...' : 'Add User'}
+    &lt;/button&gt;
+  );
+}
+
+// SWR Mutation
+import { mutate } from 'swr';
+
+function AddUserButton() {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const addUser = async () =&gt; {
+    setIsLoading(true);
+    try {
+      await axios.post('/api/users', { name: 'New User', email: 'new@example.com' });
+      // Revalidate the users list
+      mutate('/api/users');
+    } catch (error) {
+      console.error('Failed to add user:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    &lt;button onClick={addUser} disabled={isLoading}&gt;
+      {isLoading ? 'Adding...' : 'Add User'}
+    &lt;/button&gt;
+  );
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>טיפים למימוש יעיל</h2>
+        <ul>
+          <li>
+            להגדיר staleTime ו‑cacheTime בהתאם לצורך בביצועים מול עדכניות.
+          </li>
+          <li>להשתמש ב‑query keys ברורים כדי לא לשבור caching.</li>
+          <li>לשלב עם React DevTools עבור ניטור state של queries.</li>
+          <li>
+            למנוע שימוש ב‑local state מיותר כאשר React Query/SWR מנהלות את
+            ה‑data.
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          React Query ו‑SWR מפשטות את ניהול נתונים אסינכרוניים ב‑React. שילוב
+          caching, refetch אוטומטי וניהול שגיאות מאפשר UI מהיר, יציב ומעודכן,
+          מבלי להסתבך בניהול state ידני מורכב.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

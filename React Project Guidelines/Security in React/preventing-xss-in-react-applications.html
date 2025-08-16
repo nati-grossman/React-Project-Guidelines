@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Preventing XSS – הגנה מפני Cross-Site Scripting - React Project Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Preventing XSS – הגנה מפני Cross-Site Scripting</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה הגנה מפני XSS חשובה?</h2>
+        <p>
+          בפיתוח אפליקציות React, XSS (Cross-Site Scripting) הוא אחד האיומים
+          הנפוצים על אבטחת ה‑UI. XSS מאפשר לתוקף להזריק קוד זדוני (לרוב
+          JavaScript) לתוך האתר, ולהריץ אותו בדפדפן של המשתמשים. לכן, הגנה מפני
+          XSS היא קריטית לאפליקציה בטוחה ואמינה.
+        </p>
+        <ul>
+          <li>
+            מונע גישה לא מורשית ל‑cookies, localStorage או session tokens.
+          </li>
+          <li>מונע גניבת מידע אישי או סשנים של משתמשים.</li>
+          <li>שומר על אמינות האפליקציה ומונע פגיעות חוקיות או מוניטין.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>איך XSS קורה</h2>
+        <ul>
+          <li>
+            הכנסת קוד זדוני דרך input forms, URL params או third-party content.
+          </li>
+          <li>
+            הצגת HTML לא מסונן ב‑UI עם <code>dangerouslySetInnerHTML</code> או
+            <code>innerHTML</code>.
+          </li>
+          <li>
+            שימוש ב‑<code>eval</code> או הפעלת קוד JS שמגיע ממקורות חיצוניים.
+          </li>
+        </ul>
+        <h3>דוגמאות לקוד פגיע</h3>
+        <pre dir="ltr"><code>// ❌ DANGEROUS - Don't do this
+function UnsafeComponent({ userInput }) {
+  return (
+    &lt;div dangerouslySetInnerHTML={{ __html: userInput }} /&gt;
+  );
+}
+
+// ❌ DANGEROUS - Direct eval
+function UnsafeEval({ userCode }) {
+  eval(userCode); // Never do this!
+}
+
+// ❌ DANGEROUS - innerHTML
+function UnsafeInnerHTML({ content }) {
+  useEffect(() => {
+    document.getElementById('content').innerHTML = content;
+  }, [content]);
+  
+  return &lt;div id="content" /&gt;;
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>שיטות למניעה</h2>
+        <h3>1. Escape / Sanitize Input</h3>
+        <p>לא להציג תוכן מהמשתמש ישירות ב‑DOM.</p>
+        <p>שימוש בספריות כמו DOMPurify לניקוי HTML לפני הצגה:</p>
+        <pre dir="ltr"><code>import DOMPurify from 'dompurify';
+
+function SafeHTMLComponent({ userInput }) {
+  const safeHTML = DOMPurify.sanitize(userInput, {
+    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p'],
+    ALLOWED_ATTR: []
+  });
+  
+  return (
+    &lt;div dangerouslySetInnerHTML={{ __html: safeHTML }} /&gt;
+  );
+}
+
+// Alternative - for simple text content
+function SafeTextComponent({ userInput }) {
+  // React automatically escapes this
+  return &lt;div&gt;{userInput}&lt;/div&gt;;
+}</code></pre>
+
+        <h3>2. React Built-in Protection</h3>
+        <p>
+          React מחליף באופן אוטומטי תווים מסוכנים (&lt;, &gt;, &amp;) ב־HTML
+          entities.
+        </p>
+        <p>לכן, שימוש ב־JSX רגיל הוא בדרך כלל בטוח:</p>
+        <pre dir="ltr"><code>function SafeComponent({ userInput }) {
+  // ✅ SAFE - React automatically escapes
+  return (
+    &lt;div&gt;
+      &lt;h2&gt;User Comment:&lt;/h2&gt;
+      &lt;p&gt;{userInput}&lt;/p&gt;
+    &lt;/div&gt;
+  );
+}
+
+// Even malicious input like "&lt;script&gt;alert('XSS')&lt;/script&gt;" 
+// will be displayed as text, not executed</code></pre>
+
+        <h3>3. המנע מ‑dangerouslySetInnerHTML כשאפשר</h3>
+        <p>להשתמש בו רק כשאין ברירה, ובשילוב עם sanitization:</p>
+        <pre dir="ltr"><code>import DOMPurify from 'dompurify';
+
+function RichTextEditor({ htmlContent }) {
+  const sanitizedContent = useMemo(() => {
+    return DOMPurify.sanitize(htmlContent, {
+      ALLOWED_TAGS: [
+        'h1', 'h2', 'h3', 'p', 'br', 'strong', 'em', 'u',
+        'ol', 'ul', 'li', 'a', 'img'
+      ],
+      ALLOWED_ATTR: ['href', 'src', 'alt', 'title'],
+      ALLOWED_URI_REGEXP: /^https?:\/\//
+    });
+  }, [htmlContent]);
+
+  return (
+    &lt;div 
+      className="rich-text-content"
+      dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+    /&gt;
+  );
+}</code></pre>
+
+        <h3>4. Content Security Policy (CSP)</h3>
+        <p>הגדרה בשרת שמגבילה הפעלת סקריפטים ממקורות לא מהימנים:</p>
+        <pre dir="ltr"><code>&lt;!-- In HTML head --&gt;
+&lt;meta http-equiv="Content-Security-Policy" 
+      content="script-src 'self' 'unsafe-inline' https://trusted-cdn.com; 
+               object-src 'none'; 
+               base-uri 'self';" /&gt;
+
+// Or in server headers
+app.use((req, res, next) => {
+  res.setHeader(
+    'Content-Security-Policy',
+    "script-src 'self' 'unsafe-inline' https://trusted-cdn.com; object-src 'none';"
+  );
+  next();
+});</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>Custom Hook לבדיקת Input</h2>
+        <pre dir="ltr"><code>import { useMemo } from 'react';
+import DOMPurify from 'dompurify';
+
+function useSafeHTML(htmlString, options = {}) {
+  const defaultOptions = {
+    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br'],
+    ALLOWED_ATTR: [],
+    KEEP_CONTENT: true,
+  };
+
+  const safeHTML = useMemo(() => {
+    if (!htmlString) return '';
+    
+    const config = { ...defaultOptions, ...options };
+    return DOMPurify.sanitize(htmlString, config);
+  }, [htmlString, options]);
+
+  const isClean = useMemo(() => {
+    return safeHTML === htmlString;
+  }, [safeHTML, htmlString]);
+
+  return { safeHTML, isClean };
+}
+
+// Usage
+function CommentComponent({ comment }) {
+  const { safeHTML, isClean } = useSafeHTML(comment.content);
+
+  return (
+    &lt;div&gt;
+      {!isClean && (
+        &lt;div className="warning"&gt;
+          Content was modified for security reasons
+        &lt;/div&gt;
+      )}
+      &lt;div dangerouslySetInnerHTML={{ __html: safeHTML }} /&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>טיפים למימוש יעיל</h2>
+        <ul>
+          <li>תמיד להניח שהקלט מהמשתמש אינו בטוח.</li>
+          <li>לשלב sanitization גם בצד השרת וגם בצד הלקוח.</li>
+          <li>
+            להימנע משימוש ב־<code>eval</code>, <code>new Function</code> או
+            <code>innerHTML</code> ישירות.
+          </li>
+          <li>
+            להשתמש בכלים לאוטומציה של בדיקות אבטחה (Static Analysis / Linter).
+          </li>
+          <li>לבדוק input validation גם בשרת וגם בלקוח.</li>
+          <li>להשתמש ב־TypeScript לבדיקת סוגים והגבלת input.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          הגנה מפני XSS היא קריטית באפליקציות React. שימוש ב־sanitization, React
+          JSX רגיל, הגבלת
+          <code>dangerouslySetInnerHTML</code> ו־CSP מאפשרים אפליקציה בטוחה,
+          אמינה ומוגנת מפני התקפות זדוניות.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

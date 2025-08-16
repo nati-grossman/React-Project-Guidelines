@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Mocking API Calls – בידוד בדיקות מהשרת - React Project Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Mocking API Calls – בידוד בדיקות מהשרת</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה Mocking API Calls חשוב?</h2>
+        <p>
+          בפיתוח React, כשמפעילים בדיקות Unit, Integration או E2E, לעיתים קרובות
+          אנחנו לא רוצים שהבדיקות יתלו בשרת אמיתי. Mocking API Calls מאפשר לדמות
+          קריאות ל־API ולשלוט בתשובות שמתקבלות, כדי לבדוק את ההתנהגות של
+          הקומפוננטות בבידוד.
+        </p>
+        <ul>
+          <li>מונע תלות בשרת אמיתי או במידע חיצוני.</li>
+          <li>מאפשר בדיקה עקבית של edge cases כמו שגיאות או נתונים ריקים.</li>
+          <li>מזרז את מהירות הבדיקות, כי אין המתנה לקריאות HTTP אמיתיות.</li>
+          <li>משפר את אמינות הבדיקות ומקטין את הסיכוי ל־flaky tests.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>איך זה עובד</h2>
+        <h3>1. שימוש ב־Jest mocks</h3>
+        <p>ניתן להחליף פונקציות fetch או axios בגרסת mock:</p>
+        <pre dir="ltr"><code>jest.mock('axios');
+
+import axios from 'axios';
+import { fetchUserData } from './api';
+
+const mockedAxios = axios as jest.Mocked&lt;typeof axios&gt;;
+
+test('fetchUserData returns user data', async () => {
+  const userData = { id: 1, name: 'John Doe', email: 'john@example.com' };
+  mockedAxios.get.mockResolvedValue({ data: userData });
+  
+  const result = await fetchUserData(1);
+  
+  expect(result).toEqual(userData);
+  expect(mockedAxios.get).toHaveBeenCalledWith('/api/users/1');
+});
+
+test('fetchUserData handles errors', async () => {
+  mockedAxios.get.mockRejectedValue(new Error('Network Error'));
+  
+  await expect(fetchUserData(1)).rejects.toThrow('Network Error');
+});</code></pre>
+
+        <h3>2. Mock Service Worker (MSW)</h3>
+        <p>MSW מאפשר לדמות שרת API שלם במבחנים ובפיתוח:</p>
+        <pre dir="ltr"><code>import { rest } from 'msw';
+import { setupServer } from 'msw/node';
+import { render, screen, waitFor } from '@testing-library/react';
+import UserProfile from './UserProfile';
+
+const server = setupServer(
+  rest.get('/api/users/:id', (req, res, ctx) => {
+    const { id } = req.params;
+    return res(
+      ctx.json({
+        id: Number(id),
+        name: 'John Doe',
+        email: 'john@example.com'
+      })
+    );
+  }),
+  
+  rest.get('/api/users/999', (req, res, ctx) => {
+    return res(ctx.status(404), ctx.json({ error: 'User not found' }));
+  })
+);
+
+beforeAll(() => server.listen());
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+
+test('displays user data when API call succeeds', async () => {
+  render(&lt;UserProfile userId={1} /&gt;);
+  
+  await waitFor(() => {
+    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.getByText('john@example.com')).toBeInTheDocument();
+  });
+});
+
+test('displays error when user not found', async () => {
+  render(&lt;UserProfile userId={999} /&gt;);
+  
+  await waitFor(() => {
+    expect(screen.getByText('User not found')).toBeInTheDocument();
+  });
+});</code></pre>
+
+        <h3>3. שימוש בבדיקות React Testing Library</h3>
+        <p>שילוב Mock API עם render ו־fireEvent כדי לבדוק תגובה UI:</p>
+        <pre
+          dir="ltr"
+        ><code>import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { rest } from 'msw';
+import { setupServer } from 'msw/node';
+import DataComponent from './DataComponent';
+
+const server = setupServer(
+  rest.get('/api/data', (req, res, ctx) => {
+    return res(ctx.json({ value: 42, message: 'Success' }));
+  })
+);
+
+beforeAll(() => server.listen());
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+
+test('loads and displays data when button is clicked', async () => {
+  render(&lt;DataComponent /&gt;);
+  
+  expect(screen.queryByText('42')).not.toBeInTheDocument();
+  
+  fireEvent.click(screen.getByText('Load Data'));
+  
+  await waitFor(() => {
+    expect(screen.getByText('42')).toBeInTheDocument();
+    expect(screen.getByText('Success')).toBeInTheDocument();
+  });
+});
+
+test('handles loading state correctly', async () => {
+  server.use(
+    rest.get('/api/data', (req, res, ctx) => {
+      return res(ctx.delay(100), ctx.json({ value: 42 }));
+    })
+  );
+  
+  render(&lt;DataComponent /&gt;);
+  fireEvent.click(screen.getByText('Load Data'));
+  
+  expect(screen.getByText('Loading...')).toBeInTheDocument();
+  
+  await waitFor(() => {
+    expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+    expect(screen.getByText('42')).toBeInTheDocument();
+  });
+});</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>דוגמאות למצבי Edge Cases</h2>
+        <pre dir="ltr"><code>// Network error
+server.use(
+  rest.get('/api/data', (req, res, ctx) => {
+    return res.networkError('Failed to connect');
+  })
+);
+
+// Timeout
+server.use(
+  rest.get('/api/data', (req, res, ctx) => {
+    return res(ctx.delay('infinite'));
+  })
+);
+
+// Different status codes
+server.use(
+  rest.get('/api/data', (req, res, ctx) => {
+    return res(
+      ctx.status(500),
+      ctx.json({ error: 'Internal Server Error' })
+    );
+  })
+);
+
+// Empty response
+server.use(
+  rest.get('/api/data', (req, res, ctx) => {
+    return res(ctx.json([]));
+  })
+);</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>טיפים למימוש יעיל</h2>
+        <ul>
+          <li>לבדוק גם edge cases כמו שגיאות 404, 500 או timeout.</li>
+          <li>לשמור mocks קריאים ומסודרים כדי לא לפגוע בבדיקות אחרות.</li>
+          <li>להשתמש ב־MSW בפרויקט כדי לאפשר mocks גם בפיתוח וגם בבדיקות.</li>
+          <li>לשלב עם Jest או Testing Library כדי לבדוק גם אינטראקציה UI.</li>
+          <li>
+            לוודא ש־mocks מנוקים אחרי כל בדיקה כדי למנוע השפעה על בדיקות אחרות.
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          Mocking API Calls מאפשר בידוד קומפוננטות ובדיקתן במצבים שונים בלי תלות
+          בשרת אמיתי. זה מייעל את הבדיקות, מונע בעיות flaky ומבטיח בדיקות
+          אמינות, מהירות ומקצועיות בפרויקטים גדולים של React.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

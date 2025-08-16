@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Error Boundaries – טיפול בקריסות קומפוננטות - React Project Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Error Boundaries – טיפול בקריסות קומפוננטות</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה צריך Error Boundaries?</h2>
+        <p>
+          קומפוננטה שזורקת שגיאה בזמן רינדור עלולה להפיל את כל עץ ה־UI שמתחתיה.
+          Error Boundaries תופסות את השגיאה ברמת ההורה ומציגות UI חלופי במקום
+          קריסה מלאה.
+        </p>
+      </section>
+
+      <section class="category">
+        <h2>מה זה Error Boundary?</h2>
+        <p>קומפוננטת Class שמממשת שתיים:</p>
+        <ul>
+          <li>
+            <code>static getDerivedStateFromError(error)</code> — עדכון state
+            כאשר מתרחשת שגיאה.
+          </li>
+          <li>
+            <code>componentDidCatch(error, info)</code> — לוגינג/דיווח למערכת
+            ניטור.
+          </li>
+        </ul>
+        <h3>דוגמה בסיסית</h3>
+        <pre dir="ltr"><code>class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, info) {
+    console.error('Error caught:', error, info);
+    // send to monitoring service
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return &lt;h2&gt;Something went wrong.&lt;/h2&gt;;
+    }
+    return this.props.children;
+  }
+}
+
+// שימוש
+&lt;ErrorBoundary&gt;
+  &lt;MyComponent /&gt;
+&lt;/ErrorBoundary&gt;</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>מתי להשתמש?</h2>
+        <ul>
+          <li>סביב קומפוננטות צד שלישי שעלולות לזרוק שגיאות.</li>
+          <li>סביב אזורים רגישים (טפסים, רשימות, מפות).</li>
+          <li>ברמת ה־root כדי למנוע קריסה של כל ה־UI.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>נקודות חשובות</h2>
+        <ul>
+          <li>תופס רק שגיאות ברינדור/lifecycle/constructor של ילדים.</li>
+          <li>
+            לא תופס event handlers, async או setTimeout — שם יש לטפל ידנית.
+          </li>
+          <li>מאפשר UI חלופי ושמירה על חוויה יציבה בעת כשל חלקי.</li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Local State vs Global State – מתי כל אחד מתאים - React Project Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Local State vs Global State – מתי כל אחד מתאים</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>הבדל בסיסי</h2>
+        <p>
+          לפני שבוחרים Context/Redux/כלי אחר, חשוב להבין מתי state צריך להיות
+          מקומי ומתי גלובלי.
+        </p>
+      </section>
+
+      <section class="category">
+        <h2>Local State</h2>
+        <p>
+          state פנימי לקומפוננטה, מנוהל עם
+          <code>useState</code>/<code>useReducer</code>, ונגיש לה ולצאצאים דרך
+          props.
+        </p>
+        <pre dir="ltr"><code>// Local state בדוגמת טופס
+function LoginForm() {
+  const [email, setEmail] = React.useState('');
+  const [open, setOpen] = React.useState(false); // modal מקומי
+  // ...
+}</code></pre>
+        <h3>דוגמאות</h3>
+        <ul>
+          <li>טופס עם ערכים זמניים (input, checkbox).</li>
+          <li>מצב פתוח/סגור של Modal.</li>
+          <li>טיימר פנימי בקומפוננטה אחת.</li>
+        </ul>
+        <h3>יתרונות</h3>
+        <ul>
+          <li>פשוט ומהיר לשימוש.</li>
+          <li>קל לניהול ולבדיקות.</li>
+          <li>מבודד — לא משפיע על חלקים אחרים.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>Global State</h2>
+        <p>
+          state הזמין ממספר אזורים באפליקציה (Context, Redux, Zustand, Recoil
+          וכו').
+        </p>
+        <pre dir="ltr"><code>// דוגמה קצרה עם Context ל־Theme גלובלי
+const ThemeContext = React.createContext('light');
+function App() {
+  return &lt;ThemeContext.Provider value="dark"&gt;&lt;Layout /&gt;&lt;/ThemeContext.Provider&gt;;
+}
+function Title() {
+  const theme = React.useContext(ThemeContext);
+  return &lt;h1 className={theme}&gt;Hello&lt;/h1&gt;;
+}</code></pre>
+        <h3>דוגמאות</h3>
+        <ul>
+          <li>פרטי משתמש מחובר (user, token).</li>
+          <li>Theme (מצב Dark/Light).</li>
+          <li>הגדרות מערכת המשפיעות על כמה קומפוננטות.</li>
+        </ul>
+        <h3>יתרונות</h3>
+        <ul>
+          <li>שיתוף נתונים רחב.</li>
+          <li>חוסך Props Drilling.</li>
+          <li>נוח כאשר חלקים נפרדים צריכים להגיב לאותו שינוי.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>מתי לבחור מה?</h2>
+        <h3>בחר Local State כאשר…</h3>
+        <ul>
+          <li>הנתונים רלוונטיים רק לקומפוננטה (או לצאצאים הישירים שלה).</li>
+          <li>יש עדכונים תכופים מקומיים לאזור אחד.</li>
+        </ul>
+        <h3>בחר Global State כאשר…</h3>
+        <ul>
+          <li>הנתונים נדרשים ממספר אזורים שונים.</li>
+          <li>ברצונך להימנע מ־Props Drilling עמוק.</li>
+          <li>יש צורך בתגובה רוחבית לשינויים בנתונים.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>כלל אצבע + טיפ חשוב</h2>
+        <ul>
+          <li><strong>התחל ב־Local State</strong> — פשוט יותר.</li>
+          <li>
+            <strong>העבר ל־Global</strong> רק כשבאמת צריך לשתף מידע בין אזורים.
+          </li>
+          <li>שמור את ה־state קרוב ככל האפשר למקום שבו הוא נדרש.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <ul>
+          <li><strong>Local State</strong>: מצוין למידע פנימי וממוקד.</li>
+          <li><strong>Global State</strong>: מתאים לשיתוף מידע רחב.</li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

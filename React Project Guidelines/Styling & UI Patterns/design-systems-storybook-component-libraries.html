@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Design Systems – Storybook / Component Libraries - React Project Guidelines</title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Design Systems – שימוש ב־Storybook / Component Libraries</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה Design System חשוב?</h2>
+        <p>
+          שמירה על עקביות בעיצוב ובקומפוננטות היא קריטית, במיוחד בפרויקטים גדולים או בצוותים מרובי
+          מפתחים. Design System מספק סט חוקים, קומפוננטות מוכנות וסטיילינג אחיד שמאיץ פיתוח ומשפר איכות.
+        </p>
+        <ul>
+          <li>שמירה על עקביות UI בכל האפליקציה.</li>
+          <li>מאפשר פיתוח מהיר עם קומפוננטות מוכנות מראש.</li>
+          <li>מפחית טעויות עיצוביות וחזרתיות בקוד.</li>
+          <li>מקל על בדיקות וניהול גרסאות של קומפוננטות.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>Storybook</h2>
+        <h3>יתרונות</h3>
+        <ul>
+          <li>מציג כל קומפוננטה בצורה מבודדת ודטרמיניסטית.</li>
+          <li>מקל על כתיבת בדיקות UI (Visual Regression).</li>
+          <li>מאפשר למעצבים/מפתחים להתנסות ללא הרצה מלאה של האפליקציה.</li>
+        </ul>
+        <h3>חסרונות</h3>
+        <ul>
+          <li>דורש תחזוקה של stories לכל קומפוננטה.</li>
+          <li>עקומת למידה עבור מפתחים חדשים.</li>
+        </ul>
+        <h3>דוגמה ל־Story (CSF)</h3>
+        <pre dir="ltr"><code>// Button.stories.tsx
+import type { Meta, StoryObj } from '@storybook/react';
+import { Button } from './Button';
+
+const meta: Meta<typeof Button> = {
+  title: 'Components/Button',
+  component: Button,
+};
+export default meta;
+
+export const Primary: StoryObj<typeof Button> = {
+  args: { label: 'Click me', variant: 'primary' },
+};
+
+export const Disabled: StoryObj<typeof Button> = {
+  args: { label: 'Disabled', disabled: true },
+};</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>Component Libraries</h2>
+        <h3>יתרונות</h3>
+        <ul>
+          <li>ספריות מוכנות (Material UI, Chakra UI) מזרזות פיתוח.</li>
+          <li>כוללות סטיילינג, רכיבים אינטראקטיביים ונגישות מובנית.</li>
+          <li>אחידות גבוהה וחיסכון בזמן.</li>
+        </ul>
+        <h3>חסרונות</h3>
+        <ul>
+          <li>פחות גמישות בהתאמה אישית של רכיבים קיימים.</li>
+          <li>עלויות משקל חבילה (bundle size) וקוד לא בשימוש.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>טיפים לשימוש יעיל</h2>
+        <ul>
+          <li>שלבו Storybook עם Component Library לצורך עקביות וגמישות יחד.</li>
+          <li>הגדירו סטיילינג אחיד ונגישות בכל הקומפוננטות מההתחלה.</li>
+          <li>תעדו כל קומפוננטה עם props, states ודוגמאות שימוש.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          Design Systems מבטיחים עקביות, איכות ופיתוח מהיר. שילוב Storybook לתיעוד ובדיקה מבודדת יחד עם
+          Component Libraries מוכנות יוצר סביבת פיתוח מקצועית, יציבה ונוחה לצוותים גדולים.
+        </p>
+      </section>
+    </main>
+  </body>
+  </html>
+

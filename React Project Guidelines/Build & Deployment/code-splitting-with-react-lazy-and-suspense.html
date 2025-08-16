@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Code Splitting עם React.lazy ו‑Suspense – טעינה חכמה של קוד - React
+      Project Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Code Splitting עם React.lazy ו‑Suspense – טעינה חכמה של קוד</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה Code Splitting חשוב?</h2>
+        <p>
+          בפיתוח React, ככל שהאפליקציה גדלה, גודל חבילת ה‑JS גדל גם הוא. Code
+          Splitting מאפשר לחלק את הקוד לחבילות קטנות יותר ולטעון רק את מה שנדרש,
+          בזמן שנדרש, כדי לשפר ביצועים וחוויית משתמש.
+        </p>
+        <ul>
+          <li>מקטין את זמן הטעינה הראשוני של האפליקציה.</li>
+          <li>משפר את perceived performance – המשתמש רואה תוכן מהר יותר.</li>
+          <li>מאפשר טעינה דינמית של קומפוננטות כבדות רק כשצריך אותן.</li>
+          <li>משתלב היטב עם routing ודפי Lazy Loaded.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>איך זה עובד</h2>
+        <h3>1. React.lazy</h3>
+        <p>מאפשר טעינה דינמית של קומפוננטות רק בזמן שהן נדרשות:</p>
+        <pre dir="ltr"><code>import React, { Suspense } from 'react';
+
+// Basic lazy loading
+const UserProfile = React.lazy(() => import('./UserProfile'));
+const Dashboard = React.lazy(() => import('./Dashboard'));
+const Settings = React.lazy(() => import('./Settings'));
+
+function App() {
+  const [currentPage, setCurrentPage] = useState('profile');
+
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'profile':
+        return (
+          &lt;Suspense fallback={&lt;PageLoader /&gt;}&gt;
+            &lt;UserProfile /&gt;
+          &lt;/Suspense&gt;
+        );
+      case 'dashboard':
+        return (
+          &lt;Suspense fallback={&lt;PageLoader /&gt;}&gt;
+            &lt;Dashboard /&gt;
+          &lt;/Suspense&gt;
+        );
+      case 'settings':
+        return (
+          &lt;Suspense fallback={&lt;PageLoader /&gt;}&gt;
+            &lt;Settings /&gt;
+          &lt;/Suspense&gt;
+        );
+      default:
+        return &lt;div&gt;Page not found&lt;/div&gt;;
+    }
+  };
+
+  return (
+    &lt;div className="app"&gt;
+      &lt;nav&gt;
+        &lt;button onClick={() =&gt; setCurrentPage('profile')}&gt;Profile&lt;/button&gt;
+        &lt;button onClick={() =&gt; setCurrentPage('dashboard')}&gt;Dashboard&lt;/button&gt;
+        &lt;button onClick={() =&gt; setCurrentPage('settings')}&gt;Settings&lt;/button&gt;
+      &lt;/nav&gt;
+      {renderPage()}
+    &lt;/div&gt;
+  );
+}
+
+// Custom loading component
+function PageLoader() {
+  return (
+    &lt;div className="loader-container"&gt;
+      &lt;div className="spinner"&gt;&lt;/div&gt;
+      &lt;p&gt;Loading page...&lt;/p&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+
+        <h3>2. שימוש עם React Router</h3>
+        <p>ניתן לטעון דפים שלמים לפי route:</p>
+        <pre
+          dir="ltr"
+        ><code>import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Suspense, lazy } from 'react';
+
+// Lazy load pages
+const Home = lazy(() => import('./pages/Home'));
+const About = lazy(() => import('./pages/About'));
+const Contact = lazy(() => import('./pages/Contact'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const UserProfile = lazy(() => import('./pages/UserProfile'));
+
+// Higher-order component for lazy loading with error boundary
+function LazyPage({ Component, fallback = &lt;GlobalLoader /&gt; }) {
+  return (
+    &lt;Suspense fallback={fallback}&gt;
+      &lt;ErrorBoundary&gt;
+        &lt;Component /&gt;
+      &lt;/ErrorBoundary&gt;
+    &lt;/Suspense&gt;
+  );
+}
+
+function App() {
+  return (
+    &lt;Router&gt;
+      &lt;div className="app"&gt;
+        &lt;Header /&gt;
+        &lt;main&gt;
+          &lt;Routes&gt;
+            &lt;Route 
+              path="/" 
+              element={&lt;LazyPage Component={Home} /&gt;} 
+            /&gt;
+            &lt;Route 
+              path="/about" 
+              element={&lt;LazyPage Component={About} /&gt;} 
+            /&gt;
+            &lt;Route 
+              path="/contact" 
+              element={&lt;LazyPage Component={Contact} /&gt;} 
+            /&gt;
+            &lt;Route 
+              path="/dashboard" 
+              element={
+                &lt;ProtectedRoute&gt;
+                  &lt;LazyPage 
+                    Component={Dashboard} 
+                    fallback={&lt;DashboardSkeleton /&gt;} 
+                  /&gt;
+                &lt;/ProtectedRoute&gt;
+              } 
+            /&gt;
+            &lt;Route 
+              path="/profile/:userId" 
+              element={
+                &lt;ProtectedRoute&gt;
+                  &lt;LazyPage Component={UserProfile} /&gt;
+                &lt;/ProtectedRoute&gt;
+              } 
+            /&gt;
+          &lt;/Routes&gt;
+        &lt;/main&gt;
+      &lt;/div&gt;
+    &lt;/Router&gt;
+  );
+}
+
+// Global loading component
+function GlobalLoader() {
+  return (
+    &lt;div className="global-loader"&gt;
+      &lt;div className="loader-animation"&gt;
+        &lt;div className="spinner"&gt;&lt;/div&gt;
+        &lt;h3&gt;Loading...&lt;/h3&gt;
+        &lt;p&gt;Please wait while we load the page&lt;/p&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}
+
+// Dashboard skeleton for better UX
+function DashboardSkeleton() {
+  return (
+    &lt;div className="dashboard-skeleton"&gt;
+      &lt;div className="skeleton-header"&gt;&lt;/div&gt;
+      &lt;div className="skeleton-content"&gt;
+        &lt;div className="skeleton-card"&gt;&lt;/div&gt;
+        &lt;div className="skeleton-card"&gt;&lt;/div&gt;
+        &lt;div className="skeleton-card"&gt;&lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+
+        <h3>3. Dynamic Imports מתקדמים</h3>
+        <p>מאפשר טעינה של מודולים לפי תנאים מסוימים:</p>
+        <pre dir="ltr"><code>// Conditional lazy loading
+const ConditionalComponent = lazy(() => {
+  const userRole = localStorage.getItem('userRole');
+  
+  if (userRole === 'admin') {
+    return import('./AdminDashboard');
+  } else if (userRole === 'user') {
+    return import('./UserDashboard');
+  } else {
+    return import('./GuestDashboard');
+  }
+});
+
+// Feature-based lazy loading
+const FeatureComponent = lazy(async () => {
+  const isFeatureEnabled = await checkFeatureFlag('advanced-analytics');
+  
+  if (isFeatureEnabled) {
+    return import('./AdvancedAnalytics');
+  } else {
+    return import('./BasicAnalytics');
+  }
+});
+
+// Lazy loading with retry mechanism
+function lazyWithRetry(importFn, retries = 3) {
+  return lazy(async () => {
+    let attempt = 0;
+    
+    while (attempt &lt; retries) {
+      try {
+        const module = await importFn();
+        return module;
+      } catch (error) {
+        attempt++;
+        if (attempt &gt;= retries) {
+          throw error;
+        }
+        // Wait before retry
+        await new Promise(resolve =&gt; setTimeout(resolve, 1000 * attempt));
+      }
+    }
+  });
+}
+
+// Usage with retry
+const ReliableComponent = lazyWithRetry(() =&gt; import('./ReliableComponent'));
+
+// Preloading strategy
+function preloadComponent(importFn) {
+  const componentImport = importFn();
+  return lazy(() =&gt; componentImport);
+}
+
+// Preload on hover or user intent
+function PreloadOnHover({ children, importFn }) {
+  const [isPreloaded, setIsPreloaded] = useState(false);
+  
+  const handleMouseEnter = () =&gt; {
+    if (!isPreloaded) {
+      importFn();
+      setIsPreloaded(true);
+    }
+  };
+  
+  return (
+    &lt;div onMouseEnter={handleMouseEnter}&gt;
+      {children}
+    &lt;/div&gt;
+  );
+}
+
+// Usage
+&lt;PreloadOnHover importFn={() =&gt; import('./HeavyComponent')}&gt;
+  &lt;button&gt;Load Heavy Component&lt;/button&gt;
+&lt;/PreloadOnHover&gt;</code></pre>
+
+        <h3>4. Custom Hook ל-Lazy Loading</h3>
+        <pre dir="ltr"><code>import { useState, useEffect } from 'react';
+
+function useLazyComponent(importFn, shouldLoad = true) {
+  const [Component, setComponent] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (shouldLoad && !Component) {
+      setLoading(true);
+      setError(null);
+      
+      importFn()
+        .then((module) => {
+          setComponent(() => module.default || module);
+        })
+        .catch((err) => {
+          setError(err);
+          console.error('Failed to load component:', err);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, [shouldLoad, Component, importFn]);
+
+  return { Component, loading, error };
+}
+
+// Usage
+function DynamicComponentLoader({ shouldLoadChart }) {
+  const { Component: ChartComponent, loading, error } = useLazyComponent(
+    () => import('./HeavyChartComponent'),
+    shouldLoadChart
+  );
+
+  if (error) {
+    return &lt;div&gt;Failed to load chart component&lt;/div&gt;;
+  }
+
+  if (loading) {
+    return &lt;div&gt;Loading chart...&lt;/div&gt;;
+  }
+
+  if (!ChartComponent) {
+    return &lt;button onClick={() => setShouldLoadChart(true)}&gt;Load Chart&lt;/button&gt;;
+  }
+
+  return &lt;ChartComponent data={chartData} /&gt;;
+}</code></pre>
+
+        <h3>5. Bundle Analysis ו-Optimization</h3>
+        <pre dir="ltr"><code>// webpack-bundle-analyzer integration
+import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
+
+// In webpack config or package.json script
+{
+  "scripts": {
+    "analyze": "npm run build && npx webpack-bundle-analyzer build/static/js/*.js"
+  }
+}
+
+// Size monitoring utility
+function logChunkSizes() {
+  if (process.env.NODE_ENV === 'development') {
+    console.log('📦 Chunk sizes:');
+    
+    // Monitor dynamic imports
+    const originalDynamicImport = window.import;
+    window.import = function(specifier) {
+      console.log(`Loading chunk: ${specifier}`);
+      return originalDynamicImport(specifier);
+    };
+  }
+}
+
+// Performance monitoring for lazy components
+function withPerformanceMonitoring(LazyComponent, componentName) {
+  return function MonitoredComponent(props) {
+    useEffect(() => {
+      const startTime = performance.now();
+      
+      return () => {
+        const endTime = performance.now();
+        console.log(`${componentName} render time: ${endTime - startTime}ms`);
+      };
+    }, []);
+    
+    return &lt;LazyComponent {...props} /&gt;;
+  };
+}
+
+// Usage
+const MonitoredChart = withPerformanceMonitoring(
+  lazy(() => import('./ChartComponent')),
+  'ChartComponent'
+);</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>Error Boundaries ל-Lazy Components</h2>
+        <pre dir="ltr"><code>import React from 'react';
+
+class LazyLoadErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Lazy load error:', error, errorInfo);
+    
+    // Log to monitoring service
+    if (window.Sentry) {
+      window.Sentry.captureException(error, {
+        contexts: {
+          lazy_load: {
+            component: this.props.componentName,
+            errorInfo,
+          },
+        },
+      });
+    }
+  }
+
+  handleRetry = () => {
+    this.setState({ hasError: false, error: null });
+  };
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        &lt;div className="lazy-error-boundary"&gt;
+          &lt;h3&gt;משהו השתבש בטעינת הקומפוננטה&lt;/h3&gt;
+          &lt;p&gt;{this.state.error?.message}&lt;/p&gt;
+          &lt;button onClick={this.handleRetry}&gt;נסה שוב&lt;/button&gt;
+          {this.props.fallback && (
+            &lt;button onClick={() =&gt; this.props.onFallback?.()}&gt;
+              השתמש בגרסה פשוטה
+            &lt;/button&gt;
+          )}
+        &lt;/div&gt;
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// HOC for wrapping lazy components
+function withLazyErrorBoundary(LazyComponent, options = {}) {
+  return function WrappedLazyComponent(props) {
+    return (
+      &lt;LazyLoadErrorBoundary 
+        componentName={options.name}
+        fallback={options.fallback}
+        onFallback={options.onFallback}
+      &gt;
+        &lt;Suspense fallback={options.loader || &lt;div&gt;Loading...&lt;/div&gt;}&gt;
+          &lt;LazyComponent {...props} /&gt;
+        &lt;/Suspense&gt;
+      &lt;/LazyLoadErrorBoundary&gt;
+    );
+  };
+}
+
+// Usage
+const SafeChart = withLazyErrorBoundary(
+  lazy(() => import('./ChartComponent')),
+  {
+    name: 'ChartComponent',
+    loader: &lt;ChartSkeleton /&gt;,
+    fallback: true,
+    onFallback: () => console.log('Using fallback chart'),
+  }
+);</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>טיפים למימוש יעיל</h2>
+        <ul>
+          <li>
+            תמיד להקיף קומפוננטות ב‑Suspense עם fallback מותאם לקומפוננטה
+            הספציפית.
+          </li>
+          <li>
+            לשלב Code Splitting עם Bundle Analyzer כדי להבין מה נטען ומתי.
+          </li>
+          <li>
+            לא לעשות over-split – חלוקה מוגזמת יוצרת מספר בקשות HTTP רבות מדי.
+          </li>
+          <li>
+            לשקול preloading של קומפוננטות על סמך user intent (hover, click).
+          </li>
+          <li>
+            להשתמש ב-Error Boundaries עבור lazy components למקרה של כשלון טעינה.
+          </li>
+          <li>
+            לבחור נקודות חלוקה אסטרטגיות - routes, tabs, modals, heavy
+            components.
+          </li>
+          <li>לנטר ביצועים ולמדוד את ההשפעה של Code Splitting על UX.</li>
+          <li>לשלב עם Service Workers לcaching אגרסיבי של chunks.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>דוגמה מקיפה - E-commerce App</h2>
+        <pre dir="ltr"><code>// Main App with strategic code splitting
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Suspense, lazy } from 'react';
+
+// Core components (not lazy - loaded immediately)
+import Header from './components/Header';
+import Footer from './components/Footer';
+import ErrorBoundary from './components/ErrorBoundary';
+
+// Lazy loaded pages
+const HomePage = lazy(() => import('./pages/HomePage'));
+const ProductList = lazy(() => import('./pages/ProductList'));
+const ProductDetail = lazy(() => import('./pages/ProductDetail'));
+const Cart = lazy(() => import('./pages/Cart'));
+const Checkout = lazy(() => import('./pages/Checkout'));
+const UserAccount = lazy(() => import('./pages/UserAccount'));
+
+// Heavy components - loaded only when needed
+const ProductComparison = lazy(() => import('./components/ProductComparison'));
+const ReviewsSection = lazy(() => import('./components/ReviewsSection'));
+const RecommendationEngine = lazy(() => import('./components/RecommendationEngine'));
+
+// Admin panel - separate chunk
+const AdminPanel = lazy(() => import('./admin/AdminPanel'));
+
+function App() {
+  return (
+    &lt;Router&gt;
+      &lt;div className="app"&gt;
+        &lt;Header /&gt;
+        &lt;ErrorBoundary&gt;
+          &lt;main&gt;
+            &lt;Routes&gt;
+              &lt;Route 
+                path="/" 
+                element={
+                  &lt;Suspense fallback={&lt;HomeSkeleton /&gt;}&gt;
+                    &lt;HomePage /&gt;
+                  &lt;/Suspense&gt;
+                } 
+              /&gt;
+              &lt;Route 
+                path="/products" 
+                element={
+                  &lt;Suspense fallback={&lt;ProductListSkeleton /&gt;}&gt;
+                    &lt;ProductList /&gt;
+                  &lt;/Suspense&gt;
+                } 
+              /&gt;
+              &lt;Route 
+                path="/product/:id" 
+                element={
+                  &lt;Suspense fallback={&lt;ProductDetailSkeleton /&gt;}&gt;
+                    &lt;ProductDetail /&gt;
+                  &lt;/Suspense&gt;
+                } 
+              /&gt;
+              &lt;Route 
+                path="/cart" 
+                element={
+                  &lt;Suspense fallback={&lt;CartSkeleton /&gt;}&gt;
+                    &lt;Cart /&gt;
+                  &lt;/Suspense&gt;
+                } 
+              /&gt;
+              &lt;Route 
+                path="/admin/*" 
+                element={
+                  &lt;ProtectedRoute role="admin"&gt;
+                    &lt;Suspense fallback={&lt;AdminLoader /&gt;}&gt;
+                      &lt;AdminPanel /&gt;
+                    &lt;/Suspense&gt;
+                  &lt;/ProtectedRoute&gt;
+                } 
+              /&gt;
+            &lt;/Routes&gt;
+          &lt;/main&gt;
+        &lt;/ErrorBoundary&gt;
+        &lt;Footer /&gt;
+      &lt;/div&gt;
+    &lt;/Router&gt;
+  );
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          Code Splitting עם React.lazy ו‑Suspense מאפשר טעינה חכמה של קוד, מקטין
+          את זמן הטעינה הראשוני ומשפר חוויית משתמש באפליקציות React גדולות.
+          שילוב נכון עם routing, dynamic imports ו-error boundaries מבטיח
+          אפליקציה מהירה, מודולרית ותחזוקתית.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

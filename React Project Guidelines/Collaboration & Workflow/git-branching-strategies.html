@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Git Branching Strategies - React Project Guidelines</title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Git Branching Strategies</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה Branching Strategy חשוב?</h2>
+        <p>
+          ניהול סניפים (branches) ב־Git הוא חלק מרכזי בעבודה בצוותים ומאפשר
+          פיתוח מאורגן, אינטגרציה נוחה ושחרור גרסאות יציב. Branching Strategy
+          היא גישה מסודרת שמגדירה איך ליצור, למזג ולתחזק סניפים בפרויקט.
+        </p>
+        <ul>
+          <li>מאפשר פיתוח מקבילי של מספר תכונות או תיקונים.</li>
+          <li>מפחית סיכוי להתנגשויות קוד (merge conflicts).</li>
+          <li>מבטיח שהגרסה הראשית (main/master) תמיד יציבה.</li>
+          <li>מסייע בתיעוד ההיסטוריה של השינויים וקל לניהול releases.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>אסטרטגיות נפוצות</h2>
+        <h3>1. Git Flow</h3>
+        <ul>
+          <li>
+            מבוסס על סניף <code>main</code> לייצור גרסאות יציבות ו־<code
+              >develop</code
+            >
+            לעבודה שוטפת.
+          </li>
+          <li>
+            תכונות חדשות מתבצעות בסניפים <code>feature branches</code> ונמזגות
+            ל־<code>develop</code>.
+          </li>
+          <li>Releases ו־hotfixes מנוהלים בסניפים נפרדים.</li>
+          <li><strong>מתאים לפרויקטים גדולים עם גרסאות מסודרות.</strong></li>
+        </ul>
+
+        <h3>2. GitHub Flow</h3>
+        <ul>
+          <li>סניף <code>main</code> תמיד יציב.</li>
+          <li>
+            כל תכונה או תיקון נעשים בסניף feature קטן וממוזגים ל־<code
+              >main</code
+            >
+            דרך Pull Request.
+          </li>
+          <li>
+            <strong>מתאים לפרויקטים עם Deployment תכוף ו־CI/CD פעיל.</strong>
+          </li>
+        </ul>
+
+        <h3>3. GitLab Flow</h3>
+        <ul>
+          <li>משלב בין Git Flow ל־Environment-based workflow.</li>
+          <li>
+            יש סניפים ל־<code>production</code>,
+            <code>staging</code> ו־feature-specific.
+          </li>
+          <li>
+            <strong>מאפשר פיתוח, בדיקות ושחרור גמיש יותר בסביבות שונות.</strong>
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>דוגמאות למינוי סניפים</h2>
+        <pre dir="ltr"><code>// Feature branches
+feature/user-authentication
+feature/shopping-cart
+feature/dark-mode-toggle
+
+// Bug fixes
+fix/login-button-error
+fix/memory-leak-useeffect
+hotfix/security-vulnerability
+
+// Release branches
+release/v1.2.0
+release/v2.0.0-beta</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>טיפים לניהול סניפים יעיל</h2>
+        <ul>
+          <li>
+            תן שמות ברורים לסניפים: <code>feature/login-form</code>,
+            <code>fix/button-bug</code>.
+          </li>
+          <li>
+            שמור את <code>main/master</code> יציב – אל תבצע commit ישירות.
+          </li>
+          <li>השתמש ב־Pull Requests עם Code Review לפני מיזוג.</li>
+          <li>מחק סניפים אחרי מיזוג כדי למנוע בלבול.</li>
+          <li>שילוב עם CI/CD מבטיח שכל merge נבדק אוטומטית.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>פקודות Git בסיסיות לניהול סניפים</h2>
+        <pre dir="ltr"><code># יצירת סניף חדש
+git checkout -b feature/new-component
+
+# מעבר בין סניפים
+git checkout main
+git checkout feature/new-component
+
+# מיזוג סניף
+git checkout main
+git merge feature/new-component
+
+# מחיקת סניף
+git branch -d feature/new-component
+
+# push סניף חדש
+git push -u origin feature/new-component</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          Branching Strategy היא כלי מרכזי לניהול פיתוח מאורגן ואמין. Git Flow,
+          GitHub Flow ו־GitLab Flow מספקים גישות שונות לפי צרכי הפרויקט –
+          מגרסאות יציבות ועד Deployment תכוף. בחירה נכונה מבטיחה עבודה חלקה
+          בצוות, פחות קונפליקטים ופרויקט React יציב ומנוהל היטב.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

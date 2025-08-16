@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Deployment – שימוש ב‑Netlify, Vercel או AWS - React Project Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Deployment – שימוש ב‑Netlify, Vercel או AWS</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה Deployment נכון חשוב?</h2>
+        <p>
+          לאחר פיתוח אפליקציית React, הצעד הקריטי הבא הוא פריסה (Deployment) כדי
+          שהמשתמשים יוכלו לגשת לאפליקציה. בחירה נכונה של פלטפורמת פריסה משפיעה
+          על זמינות, ביצועים ותחזוקה שוטפת.
+        </p>
+        <ul>
+          <li>מאפשר למשתמשים לגשת לאפליקציה בצורה אמינה ומאובטחת.</li>
+          <li>
+            משפר את זמני טעינת האפליקציה עם CDN, caching ו‑edge locations.
+          </li>
+          <li>מפשט תהליכי CI/CD ומאפשר פריסה אוטומטית מ‑Git.</li>
+          <li>מקל על תחזוקת גרסאות ועדכונים שוטפים.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>פלטפורמות עיקריות</h2>
+        <h3>1. Netlify</h3>
+        <p>
+          פריסה קלה מ‑GitHub, GitLab או Bitbucket. תמיכה ב‑CI/CD מובנה,
+          functions, redirect rules ו‑form handling.
+        </p>
+        <pre dir="ltr"><code>// netlify.toml - Configuration file
+[build]
+  publish = "build"
+  command = "npm run build"
+
+[build.environment]
+  NODE_VERSION = "18"
+  REACT_APP_API_URL = "https://api.myapp.com"
+
+# Redirect rules for SPA
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Headers for security and performance
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Netlify Functions for serverless backend
+[[functions]]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# Environment variables (set in Netlify dashboard)
+# REACT_APP_API_KEY
+# REACT_APP_ANALYTICS_ID</code></pre>
+
+        <h4>Deploy Script לNetlify</h4>
+        <pre dir="ltr"><code>// package.json scripts
+{
+  "scripts": {
+    "build": "react-scripts build",
+    "deploy": "npm run build && netlify deploy --prod --dir=build",
+    "deploy:preview": "npm run build && netlify deploy --dir=build"
+  }
+}
+
+// Netlify CLI deployment
+npm install -g netlify-cli
+netlify login
+netlify init
+netlify deploy --prod
+
+// Automated deployment with GitHub Actions
+name: Deploy to Netlify
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - run: npm ci
+      - run: npm run build
+      
+      - name: Deploy to Netlify
+        uses: nwtgck/actions-netlify@v2.0
+        with:
+          publish-dir: './build'
+          production-branch: main
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: "Deploy from GitHub Actions"
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}</code></pre>
+
+        <h3>2. Vercel</h3>
+        <p>
+          פלטפורמה שמותאמת במיוחד ל‑React, Next.js ו‑front-end מודרני. פריסה
+          אוטומטית מ‑Git עם Preview Deployments.
+        </p>
+        <pre dir="ltr"><code>// vercel.json - Configuration file
+{
+  "version": 2,
+  "name": "my-react-app",
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/static/(.*)",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "env": {
+    "REACT_APP_API_URL": "@api-url"
+  },
+  "build": {
+    "env": {
+      "REACT_APP_API_URL": "@api-url-build"
+    }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    }
+  ]
+}
+
+// Deployment scripts
+{
+  "scripts": {
+    "build": "react-scripts build",
+    "deploy": "vercel --prod",
+    "deploy:preview": "vercel"
+  }
+}
+
+// Vercel CLI deployment
+npm install -g vercel
+vercel login
+vercel --prod
+
+// Environment variables in Vercel
+// Set via dashboard or CLI:
+vercel env add REACT_APP_API_KEY production
+vercel env add REACT_APP_ANALYTICS_ID preview development</code></pre>
+
+        <h4>Advanced Vercel Features</h4>
+        <pre dir="ltr"><code>// API Routes (for full-stack apps)
+// pages/api/hello.js
+export default function handler(req, res) {
+  res.status(200).json({ message: 'Hello from Vercel API!' });
+}
+
+// Edge Functions
+// pages/api/edge-hello.js
+export const config = {
+  runtime: 'edge',
+};
+
+export default function handler(req) {
+  return new Response(
+    JSON.stringify({ message: 'Hello from the edge!' }),
+    {
+      headers: {
+        'content-type': 'application/json',
+      },
+    }
+  );
+}
+
+// Preview Deployments automation
+// .github/workflows/preview.yml
+name: Preview Deployment
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - run: npm ci
+      - run: npm run build
+      
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.ORG_ID }}
+          vercel-project-id: ${{ secrets.PROJECT_ID }}
+          scope: ${{ secrets.VERCEL_ORG_ID }}</code></pre>
+
+        <h3>3. AWS (S3 + CloudFront, Amplify)</h3>
+        <p>
+          גמישות גבוהה לפרויקטים מורכבים או אפליקציות עם Backend מותאם אישית.
+        </p>
+        <pre dir="ltr"><code>// AWS S3 + CloudFront Deployment
+// deploy-s3.js
+const AWS = require('aws-sdk');
+const fs = require('fs');
+const path = require('path');
+const mime = require('mime-types');
+
+const s3 = new AWS.S3({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION
+});
+
+const BUCKET_NAME = process.env.S3_BUCKET_NAME;
+const BUILD_DIR = './build';
+
+async function uploadDirectory(dirPath, bucketPath = '') {
+  const files = fs.readdirSync(dirPath);
+  
+  for (const file of files) {
+    const filePath = path.join(dirPath, file);
+    const stat = fs.statSync(filePath);
+    
+    if (stat.isDirectory()) {
+      await uploadDirectory(filePath, path.join(bucketPath, file));
+    } else {
+      const fileContent = fs.readFileSync(filePath);
+      const key = path.join(bucketPath, file).replace(/\\/g, '/');
+      
+      const params = {
+        Bucket: BUCKET_NAME,
+        Key: key,
+        Body: fileContent,
+        ContentType: mime.lookup(filePath) || 'application/octet-stream',
+        CacheControl: getCacheControl(filePath),
+      };
+      
+      try {
+        await s3.upload(params).promise();
+        console.log(`Uploaded: ${key}`);
+      } catch (error) {
+        console.error(`Error uploading ${key}:`, error);
+      }
+    }
+  }
+}
+
+function getCacheControl(filePath) {
+  if (filePath.includes('/static/')) {
+    return 'public, max-age=31536000, immutable';
+  }
+  if (filePath.endsWith('.html')) {
+    return 'public, max-age=0, must-revalidate';
+  }
+  return 'public, max-age=86400';
+}
+
+// Run deployment
+uploadDirectory(BUILD_DIR)
+  .then(() => console.log('Deployment completed!'))
+  .catch(console.error);
+
+// CloudFormation template for S3 + CloudFront
+// infrastructure.yml
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'React App S3 + CloudFront'
+
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${AWS::StackName}-react-app'
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - DomainName: !GetAtt S3Bucket.RegionalDomainName
+            Id: S3Origin
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+        Enabled: true
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # Managed-CachingOptimized
+        CustomErrorResponses:
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html</code></pre>
+
+        <h4>AWS Amplify</h4>
+        <pre dir="ltr"><code>// amplify.yml - Build configuration
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: build
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+
+# Environment variables
+# Set in Amplify Console:
+# REACT_APP_API_URL
+# REACT_APP_ANALYTICS_ID
+# REACT_APP_AUTH_DOMAIN
+
+// Amplify CLI deployment
+npm install -g @aws-amplify/cli
+amplify configure
+amplify init
+amplify add hosting
+amplify publish
+
+// Custom headers and redirects
+// public/_redirects (for SPA routing)
+/*    /index.html   200
+
+// public/_headers
+/*
+  X-Frame-Options: DENY
+  X-XSS-Protection: 1; mode=block
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+/static/*
+  Cache-Control: public, max-age=31536000, immutable</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>CI/CD Pipelines</h2>
+        <h3>GitHub Actions for Multi-Platform Deployment</h3>
+        <pre dir="ltr"><code>// .github/workflows/deploy.yml
+name: Build and Deploy
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - run: npm ci
+      - run: npm run test -- --coverage --watchAll=false
+      - run: npm run lint
+      
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - run: npm ci
+      - run: npm run build
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-files
+          path: build/
+
+  deploy-staging:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: build-files
+          path: build/
+      
+      - name: Deploy to Netlify (Preview)
+        uses: nwtgck/actions-netlify@v2.0
+        with:
+          publish-dir: './build'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: "Preview deployment from PR #${{ github.event.number }}"
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+  deploy-production:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: build-files
+          path: build/
+      
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.ORG_ID }}
+          vercel-project-id: ${{ secrets.PROJECT_ID }}
+          vercel-args: '--prod'
+      
+      - name: Deploy to AWS S3
+        run: |
+          aws s3 sync build/ s3://${{ secrets.S3_BUCKET_NAME }} --delete
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}</code></pre>
+
+        <h3>Environment-Specific Configurations</h3>
+        <pre dir="ltr"><code>// Environment configuration management
+// config/environments.js
+const environments = {
+  development: {
+    API_URL: 'http://localhost:3001/api',
+    ANALYTICS_ID: 'dev-analytics-id',
+    DEBUG: true,
+  },
+  staging: {
+    API_URL: 'https://staging-api.myapp.com/api',
+    ANALYTICS_ID: 'staging-analytics-id',
+    DEBUG: true,
+  },
+  production: {
+    API_URL: 'https://api.myapp.com/api',
+    ANALYTICS_ID: 'prod-analytics-id',
+    DEBUG: false,
+  },
+};
+
+const currentEnv = process.env.REACT_APP_ENV || 'development';
+export const config = environments[currentEnv];
+
+// Custom build script for different environments
+// scripts/build-env.js
+const { execSync } = require('child_process');
+const fs = require('fs');
+
+const environment = process.argv[2] || 'production';
+const envFile = `.env.${environment}`;
+
+if (fs.existsSync(envFile)) {
+  const envVars = fs.readFileSync(envFile, 'utf8');
+  const envObject = envVars
+    .split('\n')
+    .filter(line => line && !line.startsWith('#'))
+    .reduce((acc, line) => {
+      const [key, value] = line.split('=');
+      acc[key] = value;
+      return acc;
+    }, {});
+  
+  // Set environment variables
+  Object.assign(process.env, envObject);
+}
+
+// Run build
+console.log(`Building for ${environment} environment...`);
+execSync('npm run build', { stdio: 'inherit' });
+
+// Package.json scripts
+{
+  "scripts": {
+    "build": "react-scripts build",
+    "build:staging": "node scripts/build-env.js staging",
+    "build:production": "node scripts/build-env.js production",
+    "deploy:staging": "npm run build:staging && netlify deploy --dir=build",
+    "deploy:production": "npm run build:production && vercel --prod"
+  }
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>Performance ו-Security Optimizations</h2>
+        <pre dir="ltr"><code>// Security headers configuration
+// netlify.toml
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.myapp.com"
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+
+// Performance optimizations
+[[headers]]
+  for = "/static/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/static/css/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/static/media/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+// Service Worker registration for PWA
+// public/sw.js
+const CACHE_NAME = 'my-app-v1';
+const urlsToCache = [
+  '/',
+  '/static/js/bundle.js',
+  '/static/css/main.css',
+  '/manifest.json'
+];
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(urlsToCache))
+  );
+});
+
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => {
+        if (response) {
+          return response;
+        }
+        return fetch(event.request);
+      })
+  );
+});
+
+// Health check endpoint
+// public/_health
+{
+  "status": "ok",
+  "timestamp": "2024-01-01T00:00:00Z",
+  "version": "1.0.0"
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>Monitoring ו-Analytics</h2>
+        <pre dir="ltr"><code>// Deployment monitoring setup
+// src/utils/monitoring.js
+class DeploymentMonitor {
+  constructor() {
+    this.deploymentId = process.env.REACT_APP_DEPLOYMENT_ID || 'unknown';
+    this.environment = process.env.REACT_APP_ENV || 'production';
+  }
+
+  trackDeployment() {
+    console.log(`🚀 Deployment ${this.deploymentId} started in ${this.environment}`);
+    
+    // Track deployment in analytics
+    if (window.gtag) {
+      window.gtag('event', 'deployment', {
+        deployment_id: this.deploymentId,
+        environment: this.environment,
+        timestamp: new Date().toISOString(),
+      });
+    }
+    
+    // Send deployment info to monitoring service
+    this.sendToMonitoring({
+      event: 'deployment_started',
+      deploymentId: this.deploymentId,
+      environment: this.environment,
+      userAgent: navigator.userAgent,
+      timestamp: Date.now(),
+    });
+  }
+
+  trackError(error, context = {}) {
+    const errorInfo = {
+      message: error.message,
+      stack: error.stack,
+      deploymentId: this.deploymentId,
+      environment: this.environment,
+      context,
+      timestamp: Date.now(),
+    };
+
+    console.error('🚨 Error in deployment:', errorInfo);
+    
+    // Send to Sentry
+    if (window.Sentry) {
+      window.Sentry.captureException(error, {
+        tags: {
+          deployment_id: this.deploymentId,
+          environment: this.environment,
+        },
+        extra: context,
+      });
+    }
+  }
+
+  async sendToMonitoring(data) {
+    try {
+      await fetch('/api/monitoring', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+    } catch (error) {
+      console.error('Failed to send monitoring data:', error);
+    }
+  }
+}
+
+export const deploymentMonitor = new DeploymentMonitor();
+
+// Performance monitoring
+export function measurePerformance() {
+  if ('performance' in window) {
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const perfData = performance.getEntriesByType('navigation')[0];
+        const metrics = {
+          loadTime: perfData.loadEventEnd - perfData.fetchStart,
+          domContentLoaded: perfData.domContentLoadedEventEnd - perfData.fetchStart,
+          firstPaint: performance.getEntriesByType('paint')[0]?.startTime,
+          deploymentId: deploymentMonitor.deploymentId,
+        };
+        
+        console.log('📊 Performance metrics:', metrics);
+        deploymentMonitor.sendToMonitoring({
+          event: 'performance_metrics',
+          ...metrics,
+        });
+      }, 0);
+    });
+  }
+}
+
+// src/index.js
+import { deploymentMonitor, measurePerformance } from './utils/monitoring';
+
+// Initialize monitoring
+deploymentMonitor.trackDeployment();
+measurePerformance();
+
+// Set up error boundary
+window.addEventListener('error', (event) => {
+  deploymentMonitor.trackError(event.error, {
+    filename: event.filename,
+    lineno: event.lineno,
+    colno: event.colno,
+  });
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  deploymentMonitor.trackError(event.reason, {
+    type: 'unhandled_promise_rejection',
+  });
+});</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>טיפים לפריסה יעילה</h2>
+        <ul>
+          <li>
+            תמיד לוודא שה‑build מוכן ל‑production (npm run build) לפני העלאה.
+          </li>
+          <li>להגדיר caching נכון כדי לשפר את זמן הטעינה ל‑users חוזרים.</li>
+          <li>
+            להשתמש ב‑environment variables לניהול API URLs, keys ועוד, מבלי
+            לחשוף אותם בקוד.
+          </li>
+          <li>
+            לשלב ניטור (Sentry, LogRocket) כדי לזהות בעיות בזמן אמת לאחר הפריסה.
+          </li>
+          <li>
+            להגדיר health checks ו-monitoring לוודא שהאפליקציה עובדת כמו שצריך.
+          </li>
+          <li>לשמור על rollback strategy למקרה שהפריסה נכשלת.</li>
+          <li>
+            להשתמש ב-blue-green deployments או canary releases לפרויקטים
+            קריטיים.
+          </li>
+          <li>לבדוק performance ו-security headers לאחר הפריסה.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>השוואה בין הפלטפורמות</h2>
+        <table
+          dir="ltr"
+          style="width: 100%; border-collapse: collapse; margin: 20px 0"
+        >
+          <thead>
+            <tr style="background-color: #f5f5f5">
+              <th
+                style="border: 1px solid #ddd; padding: 12px; text-align: left"
+              >
+                Feature
+              </th>
+              <th
+                style="border: 1px solid #ddd; padding: 12px; text-align: left"
+              >
+                Netlify
+              </th>
+              <th
+                style="border: 1px solid #ddd; padding: 12px; text-align: left"
+              >
+                Vercel
+              </th>
+              <th
+                style="border: 1px solid #ddd; padding: 12px; text-align: left"
+              >
+                AWS
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border: 1px solid #ddd; padding: 12px">
+                <strong>Ease of Setup</strong>
+              </td>
+              <td style="border: 1px solid #ddd; padding: 12px">⭐⭐⭐⭐⭐</td>
+              <td style="border: 1px solid #ddd; padding: 12px">⭐⭐⭐⭐⭐</td>
+              <td style="border: 1px solid #ddd; padding: 12px">⭐⭐⭐</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #ddd; padding: 12px">
+                <strong>Performance</strong>
+              </td>
+              <td style="border: 1px solid #ddd; padding: 12px">⭐⭐⭐⭐</td>
+              <td style="border: 1px solid #ddd; padding: 12px">⭐⭐⭐⭐⭐</td>
+              <td style="border: 1px solid #ddd; padding: 12px">⭐⭐⭐⭐⭐</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #ddd; padding: 12px">
+                <strong>Scalability</strong>
+              </td>
+              <td style="border: 1px solid #ddd; padding: 12px">⭐⭐⭐⭐</td>
+              <td style="border: 1px solid #ddd; padding: 12px">⭐⭐⭐⭐</td>
+              <td style="border: 1px solid #ddd; padding: 12px">⭐⭐⭐⭐⭐</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #ddd; padding: 12px">
+                <strong>Pricing</strong>
+              </td>
+              <td style="border: 1px solid #ddd; padding: 12px">
+                Free tier + affordable
+              </td>
+              <td style="border: 1px solid #ddd; padding: 12px">
+                Free tier + usage-based
+              </td>
+              <td style="border: 1px solid #ddd; padding: 12px">Pay-per-use</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #ddd; padding: 12px">
+                <strong>Features</strong>
+              </td>
+              <td style="border: 1px solid #ddd; padding: 12px">
+                Forms, Functions, Analytics
+              </td>
+              <td style="border: 1px solid #ddd; padding: 12px">
+                Edge Functions, API Routes
+              </td>
+              <td style="border: 1px solid #ddd; padding: 12px">
+                Full AWS ecosystem
+              </td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #ddd; padding: 12px">
+                <strong>Best For</strong>
+              </td>
+              <td style="border: 1px solid #ddd; padding: 12px">
+                JAMstack, static sites
+              </td>
+              <td style="border: 1px solid #ddd; padding: 12px">
+                React, Next.js apps
+              </td>
+              <td style="border: 1px solid #ddd; padding: 12px">
+                Enterprise, complex apps
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          Deployment הוא השלב שבו האפליקציה שלך מגיעה למשתמשים. בחירה בין
+          Netlify, Vercel או AWS תלויה בגודל האפליקציה, דרישות הביצועים, הצורך
+          ב‑backend מותאם אישית ורמת הגמישות הנדרשת. פריסה נכונה מלווה ב‑CI/CD,
+          CDN, ניטור ואבטחה מבטיחה אפליקציה מהירה, יציבה ומקצועית.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

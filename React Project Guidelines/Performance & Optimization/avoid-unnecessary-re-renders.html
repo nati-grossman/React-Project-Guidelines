@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Avoid Unnecessary Re-renders – זיהוי וטיפול - React Project Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Avoid Unnecessary Re-renders – זיהוי וטיפול</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה זה קורה?</h2>
+        <ul>
+          <li>שינוי state גם כשהערך לא באמת השתנה.</li>
+          <li>פונקציות/אובייקטים נוצרים מחדש בכל רינדור.</li>
+          <li>props שזולגים לעומק העץ ומרנדרים ילדים.</li>
+          <li>עדכוני context שמרעננים את כל הצרכנים.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>איך מזהים?</h2>
+        <ul>
+          <li>
+            <strong>React DevTools – Highlight Updates</strong>: זיהוי ויזואלי
+            בזמן אמת.
+          </li>
+          <li>
+            <strong>Console.log חכם</strong>: הדפסת props ושינויים ממוקדים.
+          </li>
+          <li><strong>Profiler</strong>: מדידת זמן רינדור לכל קומפוננטה.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>איך מטפלים?</h2>
+        <ul>
+          <li><strong>React.memo</strong>: מונע רינדור אם ה־props לא השתנו.</li>
+          <li>
+            <strong>useCallback / useMemo</strong>: שומרים פונקציות/ערכים כדי
+            לשמור reference יציב.
+          </li>
+          <li>
+            <strong>פיצול קומפוננטות</strong>: הפרדת חלקים סטטיים מדינמיים.
+          </li>
+          <li><strong>מיקוד state</strong>: שמירת state קרוב למקום הצריכה.</li>
+          <li>
+            <strong>Context חכם</strong>: פיצול Context או שימוש ב־selectors כדי
+            לצמצם רענונים.
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>טיפ חשוב</h2>
+        <p>
+          אל תוסיפו Memoization סתם. ודאו קודם שיש בעיית ביצועים אמיתית —
+          אופטימיזציה מוקדמת מיותרת מסבכת את הקוד ופוגעת בקריאות.
+        </p>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          רינדורים מיותרים הם כמו פגישות מיותרות — מעייפים ולא מקדמים. עם הכלים
+          והמתודולוגיה הנכונה, תשמרו על אפליקציה זריזה ומגיבה גם כשהיא גדלה.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

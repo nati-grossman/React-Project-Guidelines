@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Organizing Hooks – שמירה על סדר - React Project Guidelines</title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Organizing Hooks – שמירה על סדר</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה חשוב לארגן Hooks?</h2>
+        <p>ארגון נכון מונע בלגן ומשפר קריאות, תחזוקה ושימוש חוזר.</p>
+        <ul>
+          <li><strong>קריאות</strong>: איתור מהיר של ה־Hook המתאים.</li>
+          <li>
+            <strong>תחזוקה</strong>: תיקונים ממוקדים בלי לשבור אזורים אחרים.
+          </li>
+          <li>
+            <strong>שימוש חוזר</strong>: קל לייבא ולהטמיע בפיצ׳רים נוספים.
+          </li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>כמה שיטות לארגון Hooks</h2>
+        <h3>תיקיית Hooks מרכזית בכל פיצ׳ר</h3>
+        <p>בפיצ׳ר <code>users</code> לדוגמה (עם מיקום יחסי לשאר התיקיות):</p>
+        <pre dir="ltr"><code>src/
+├─ features/
+│  ├─ users/
+│  │  ├─ components/
+│  │  ├─ hooks/
+│  │  │  ├─ useUsers.ts
+│  │  │  ├─ useUserForm.ts
+│  │  │  └─ index.ts
+│  │  ├─ services/
+│  │  └─ index.ts
+│  └─ ...
+└─ shared/ ...</code></pre>
+        <p>
+          קובץ <code>index.ts</code> יכול לייצא את כל ה־Hooks כך שהייבוא נשאר
+          נקי:
+        </p>
+        <pre dir="ltr"><code>export * from './useUsers';
+export * from './useUserForm';</code></pre>
+        <p>ייבוא לדוגמה:</p>
+        <pre dir="ltr"><code>// מתוך קובץ בפיצ׳ר users
+import { useUsers } from './hooks';
+
+// או ממחוץ לפיצ׳ר (כאשר יש barrel בשורש הפיצ׳ר)
+import { useUsers } from './features/users';</code></pre>
+
+        <h3>Shared Hooks</h3>
+        <p>
+          Hooks כלל־מערכתיים (שאינם תלויי פיצ׳ר) ממוקמים תחת
+          <code>shared/hooks</code>:
+        </p>
+        <pre dir="ltr"><code>src/
+├─ shared/
+│  └─ hooks/
+│     ├─ useFetch.ts
+│     ├─ useDebounce.ts
+│     └─ index.ts
+└─ features/
+   └─ users/ ...</code></pre>
+        <p>ייבוא לדוגמה:</p>
+        <pre dir="ltr"><code>// מכל מקום באפליקציה
+import { useDebounce } from '../shared/hooks';
+
+// ואם יש barrel לשורש shared
+import { useDebounce } from './shared';</code></pre>
+        <p>כך ניתן להשתמש בהם בכל פיצ׳ר בלי להכפיל קוד.</p>
+      </section>
+
+      <section class="category">
+        <h2>שמות Hooks ברורים</h2>
+        <ul>
+          <li>
+            תמיד prefix <code>use</code> — לדוגמה <code>useAuth</code>,
+            <code>useUsers</code>.
+          </li>
+          <li>השם מתאר בדיוק את הפעולה — כדי שמיד ברור מתי ואיך להשתמש.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>Keep it small and modular</h2>
+        <ul>
+          <li>כל Hook מממש פונקציונליות אחת.</li>
+          <li>Hook גדל מדי? מפצלים ל־Hooks קטנים וברורים יותר.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          ארגון מסודר ל־Hooks שומר על קוד נקי, קריא ומודולרי. יחד עם
+          Feature-Based Structure ו־Barrel Exports מתקבלת מערכת מסודרת שמוכנה
+          להתרחבות.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

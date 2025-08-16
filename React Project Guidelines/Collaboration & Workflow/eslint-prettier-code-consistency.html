@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      ESLint + Prettier – שמירה על אחידות - React Project Guidelines
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>ESLint + Prettier – שמירה על אחידות</h1>
+      </header>
+      <nav>
+        <a href="../index.html">← חזרה לדף הבית</a>
+      </nav>
+
+      <section class="category">
+        <h2>למה ESLint ו־Prettier חשובים?</h2>
+        <p>
+          בפיתוח React, אחידות הקוד היא קריטית כדי לשמור על קריאות, תחזוקה
+          ויכולת שיתוף פעולה בין מפתחים. כלים כמו ESLint ו־Prettier מסייעים
+          לאכוף סגנון קוד אחיד ולמנוע שגיאות נפוצות בזמן הפיתוח.
+        </p>
+        <ul>
+          <li>מבטיח קריאות וסטנדרט אחיד לכל הקוד בפרויקט.</li>
+          <li>מונע באגים ושגיאות סינטקס מוקדמות.</li>
+          <li>משפר תהליכי Code Review על ידי הפחתת ויכוחים על סגנון קוד.</li>
+          <li>חוסך זמן ומאמץ בתחזוקה ארוכת טווח.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>איך זה עובד</h2>
+        <h3>ESLint</h3>
+        <p>
+          מנתח את הקוד בזמן כתיבה או build ומזהה בעיות סינטקס, שגיאות לוגיקה
+          ובעיות best practices. ניתן להגדיר חוקים מותאמים אישית (rules) לפי
+          פרויקט או צוות.
+        </p>
+        <p>דוגמא בסיסית (.eslintrc.json):</p>
+        <pre dir="ltr"><code>{
+  "extends": ["eslint:recommended", "plugin:react/recommended"],
+  "rules": {
+    "no-unused-vars": "warn",
+    "react/prop-types": "off",
+    "no-console": "warn"
+  },
+  "env": {
+    "browser": true,
+    "es2021": true
+  }
+}</code></pre>
+
+        <h3>Prettier</h3>
+        <p>
+          עוסק בעיקר בעיצוב הקוד – spacing, line breaks, סוגי גרשיים,
+          indentation. מסייע ליצור קוד אחיד ללא צורך בדיונים ידניים על סגנון.
+        </p>
+        <p>דוגמא בסיסית להגדרה (.prettierrc או package.json):</p>
+        <pre dir="ltr"><code>{
+  "singleQuote": true,
+  "trailingComma": "es5",
+  "semi": true,
+  "tabWidth": 2,
+  "printWidth": 100
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>שילוב ESLint + Prettier</h2>
+        <ul>
+          <li>
+            ESLint מזהה בעיות לוגיקה וסגנון, Prettier מטפל בעיצוב אוטומטי.
+          </li>
+          <li>שימוש ב־eslint-config-prettier מונע התנגשויות בין הכלים.</li>
+        </ul>
+        <p>התקנה:</p>
+        <pre
+          dir="ltr"
+        ><code>npm install --save-dev eslint prettier eslint-config-prettier eslint-plugin-prettier</code></pre>
+        <p>הגדרה ב־.eslintrc.json:</p>
+        <pre dir="ltr"><code>{
+  "extends": [
+    "eslint:recommended",
+    "plugin:react/recommended",
+    "prettier"
+  ],
+  "plugins": ["prettier"],
+  "rules": {
+    "prettier/prettier": "error"
+  }
+}</code></pre>
+      </section>
+
+      <section class="category">
+        <h2>טיפים למימוש יעיל</h2>
+        <ul>
+          <li>להגדיר את הכלים כבר בשלב תחילת הפרויקט.</li>
+          <li>לשלב עם IDE (VSCode) ל־Auto-Fix בזמן כתיבה.</li>
+          <li>
+            לכלול בדיקות lint ב־CI/CD כדי לוודא אחידות גם בפרויקטים מרובי
+            מפתחים.
+          </li>
+          <li>להימנע מוויכוחים על סגנון קוד – הכלים מיישרים קו אוטומטית.</li>
+        </ul>
+      </section>
+
+      <section class="category">
+        <h2>סיכום</h2>
+        <p>
+          שילוב ESLint ו־Prettier מבטיח קוד אחיד, קריא ותחזיק לאורך זמן. כלים
+          אלו מקלים על מפתחים, משפרים תהליכי Code Review ומפחיתים באגים, במיוחד
+          בפרויקטים גדולים ומורכבים.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
